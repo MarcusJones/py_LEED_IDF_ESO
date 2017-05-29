@@ -14,7 +14,7 @@ Etc.
 #===============================================================================
 from __future__ import division    
 import logging.config
-from utility_inspect import whoami, whosdaddy
+from utility_inspect import get_self, get_parent
 import unittest
 from config import *
 import re
@@ -285,7 +285,7 @@ def monitorStandard(monitorDir,
 class allTests(unittest.TestCase):
     @unittest.skip("")
     def test010_SimpleCreation(self):
-        print "**** TEST {} ****".format(whoami())
+        print "**** TEST {} ****".format(get_self())
         monitorDir = r"C:\Users\Anonymous2\Desktop\SKPOSM"
         ePlusEXEpath = r"C:\EnergyPlusV7-2-0\RunEPlus MINE Version 2.bat"
         

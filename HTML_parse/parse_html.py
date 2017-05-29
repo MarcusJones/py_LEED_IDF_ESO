@@ -14,7 +14,7 @@ Etc.
 #===============================================================================
 from __future__ import division
 import logging.config
-from utility_inspect import whoami, whosdaddy
+from utility_inspect import get_self, get_parent
 import unittest
 from config import *
 import itertools
@@ -69,9 +69,9 @@ def massConvertGJ_kWh(frame):
             newItem = float(item) * 277.7
         except:
             if item:
-                print "YES"
-            print item
-            print repr(item)
+                print("YES")
+            print(item)
+            print(repr(item))
 
             raise
         return newItem
@@ -98,9 +98,9 @@ def massConvertkWh_MWh(frame):
             newItem = float(item) / 1000
         except:
             if item:
-                print "YES"
-            print item
-            print repr(item)
+                print("YES")
+            print(item)
+            print(repr(item))
             raise
         return newItem
 
@@ -127,7 +127,7 @@ def transpose(table):
     last_row = None
     for row in table:
         if len(row) != rowLen:
-            print "Unequal rows in table, {} should be {} \n LAST ROW: {} \n NEW ROW {}".format(len(row),rowLen,last_row,row)
+            print("Unequal rows in table, {} should be {} \n LAST ROW: {} \n NEW ROW {}".format(len(row),rowLen,last_row,row))
 
             raise Exception("")
         last_row = row
@@ -260,7 +260,7 @@ def get_minimum_outside_air(parseTree):
 
     else:
         #simpleYesNo("Found no ventilation air in table")
-        print "Found no ventilation air in table"
+        print("Found no ventilation air in table")
         total_vent_m3s = 0
 
     oneRow = ['Item',sectionName, 'Minimum outdoor air occupied [m3/s]', total_vent_m3s]
@@ -300,7 +300,7 @@ def get_average_autside_air(parseTree):
         total_vent_m3s = total_vent_m3h/3600
 
     else:
-        print "Found no ventilation air in table"
+        print("Found no ventilation air in table")
 
 #        simpleYesNo("Found no ventilation air in table")
         total_vent_m3s = 0
@@ -402,7 +402,7 @@ def get_zone_cooling_sizing(parseTree):
         design_air = sum(frame["Calculated Design Air Flow [m3/s]"])
         user_air = sum(frame["User Design Air Flow [m3/s]"])
     else:
-        print "Found no Zone Cooling information"
+        print("Found no Zone Cooling information")
         design_load = 0
         user_load = 0
         design_air = 0
@@ -447,7 +447,7 @@ def get_zone_heating_sizing(parseTree):
         design_air = sum(frame["Calculated Design Air Flow [m3/s]"])
         user_air = sum(frame["User Design Air Flow [m3/s]"])
     else:
-        print "Found no Zone Heating information"
+        print("Found no Zone Heating information")
         design_load = 0
         user_load = 0
         design_air = 0
@@ -759,7 +759,7 @@ def run_project(inputDir,loc_post_excel):
     massConvertGJ_kWh(comparison_frame)
     massConvertkWh_MWh(comparison_frame)
 
-    print comparison_frame
+    print(comparison_frame)
 
     #--- Write
     #xrg. xrg2
@@ -825,11 +825,11 @@ def parse_file(thisTableFileName,flg_verbose = False):
         patValue = r".*Monthly$"
         regex = re.compile(patValue,re.VERBOSE)
         if regex.match(sectionName[0].text):
-            print "SkipMonthly",
+            print("SkipMonthly",)
             continue
 
         if flg_verbose:
-            print sectionName[0].text
+            print(sectionName[0].text)
         assert len(sectionName) == 1
         sectionName = sectionName[0]
         sectionNameText= sectionName.text.strip()
@@ -880,36 +880,6 @@ def parse_file(thisTableFileName,flg_verbose = False):
     return sectionDict
 
 
-class allTests(unittest.TestCase):
-    def test010_SimpleCreation(self):
-        print "**** TEST {} ****".format(whoami())
-        HTMLdataDir = os.getcwd() + r"\..\..\data"
-        csvPath = r"C:\Projects\tempOut\result.csv"
-        #run_project(HTMLdataDir, csvPath)
-
-    def test020_processATable(self):
-        print "**** TEST {} ****".format(whoami())
-
-        HTMLdataDir = os.getcwd() + r"\..\..\data"
-        csvPath = r"C:\Projects\tempOut\result.csv"
-        #run_project(HTMLdataDir, csvPath)
-
-        htmlFilePaths =  filter_files_dir(HTMLdataDir,ext_pat="html$")
-
-        table1 = parse_file(htmlFilePaths[0])
-
-        oneTable = tables[0]
-        print oneTable
-        raise
-        finalTable = list()
-
-
-        table = flatten_table(table)
-        finalTable = finalTable + table
-
-        for row in finalTable:
-            print row
-
 
 def run_projectGUI():
 
@@ -930,7 +900,7 @@ def run_projectGUI():
 # Main
 #===============================================================================
 if __name__ == "__main__":
-    print ABSOLUTE_LOGGING_PATH
+    print(ABSOLUTE_LOGGING_PATH)
     logging.config.fileConfig(ABSOLUTE_LOGGING_PATH)
 
 

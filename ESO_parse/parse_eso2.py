@@ -21,7 +21,7 @@ from config import *
 import logging.config
 import unittest
 
-from utility_inspect import whoami, whosdaddy, listObject
+from utility_inspect import get_self, get_parent, list_object
 from utility_path import get_current_file_dir
 import re
 import exergyframes.exergy_frame2 as xrg2
@@ -987,7 +987,7 @@ def LEED_eso_parse_df(root_dir):
 class allTests(unittest.TestCase):
 
     def setUp(self):
-        print("**** TEST {} ****".format(whoami()))
+        print("**** TEST {} ****".format(get_self()))
         #         path_eso = get_current_file_dir(__file__)
         #         path_eso = path_eso + r"\..\.."
         #         path_eso = os.path.abspath(path_eso)
@@ -1006,7 +1006,7 @@ class allTests(unittest.TestCase):
     @unittest.skipIf(0,'')
     def test010_parse1(self):
 
-        print("**** TEST {} ****".format(whoami()))
+        print("**** TEST {} ****".format(get_self()))
         root_dir = self.root_dir
         pth_eso = os.path.join(root_dir,'Proposed.eso')
         pth_eso = self.pth_big_eso
@@ -1024,7 +1024,7 @@ class allTests(unittest.TestCase):
     @unittest.skipIf(1,'')
     def test030_read_analyze(self):
 
-        print("**** TEST {} ****".format(whoami()))
+        print("**** TEST {} ****".format(get_self()))
 
         root_dir = self.root_dir
         paths = util_paths.get_files_by_name_ext(root_dir, '.', 'pck')

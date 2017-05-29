@@ -20,7 +20,7 @@ from config import *
 import logging.config
 import unittest
 import csv
-from utility_inspect import whoami, whosdaddy, listObject
+from utility_inspect import get_self, get_parent, list_object
 from UtilityXML import createTextEl, printXML
 import re
 from lxml import etree
@@ -125,11 +125,11 @@ def parse(csvPath):
 class allTests(unittest.TestCase):
     
     def setUp(self):
-        print "**** TEST {} ****".format(whoami())
+        print "**** TEST {} ****".format(get_self())
         
         
     def test010_SimpleCreation(self):
-        print "**** TEST {} ****".format(whoami())
+        print "**** TEST {} ****".format(get_self())
         
         csvPath = r"C:\Projects\081_CentralTowerFinal2\Reporting\5Zone_TransformerMeter.csv"
         

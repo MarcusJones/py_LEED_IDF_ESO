@@ -20,7 +20,7 @@ from config import *
 import logging.config
 import unittest
 
-from utility_inspect import whoami, whosdaddy, listObject
+from utility_inspect import get_self, get_parent, list_object
 import utility_inspect as util_insp
 from UtilityLogger import loggerCritical
 import idf_xml.IDF as idf
@@ -203,10 +203,10 @@ def get_named_range(path_excel):
 class allTests(unittest.TestCase):
 
     def setUp(self):
-        print "**** TEST {} ****".format(whoami())
+        print "**** TEST {} ****".format(get_self())
 
     def test010_SimpleCreation(self):
-        print "**** TEST {} ****".format(whoami())
+        print "**** TEST {} ****".format(get_self())
         path_input_file = r'D:\Projects\081_Central_Admin2\06 Project'
         excel_path = util_path.get_latest_rev(path_input_file, r"^Input Data", ext_pat = "xlsx")
         

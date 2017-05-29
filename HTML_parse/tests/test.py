@@ -73,16 +73,45 @@ class TestParseHTML(unittest.TestCase):
 
     def setUp(self):
         self.HTMLdataDir = os.path.abspath(os.getcwd() + r"\..\..\data")
-        
+        self.file_path = os.path.abspath(self.HTMLdataDir + "\SampleOutput.html")
+
+        self.file_path = r"C:\Users\jon\AppData\Local\DesignBuilder\EnergyPlus\eplustbl.htm"
+
         #csvPath = r"C:\Projects\tempOut\result.csv"
         print("Setup, HTML dir: {}".format(self.HTMLdataDir))
 
-    def test_open(self):
-        file_path = os.path.abspath(self.HTMLdataDir + "\SampleOutput.html")
-        print(file_path)
+    def test010_open(self):
+        print(self.file_path)
         
-        print(parse_html)
+        flg_verbose = True
+        flg_verbose = False
+        tree = parse_html.parse_file(self.file_path, flg_verbose)
+        print(tree)
+        self.tree = tree
         
+        #sectionDict
+        
+    def test020_process(self):
+        #        flg_verbose = False
+        #tree = parse_html.parse_file(file_path, flg_verbose)
+        self.test010_open()
+        
+        self.extracted = parse_html.extract_tables(self.tree)
+        
+    def test030_augment(self):
+        #        flg_verbose = False
+        #tree = parse_html.parse_file(file_path, flg_verbose)
+        self.test020_process()
+        
+        parse_html.augment_data_tables(self.extracted,self.tree)
+        
+    def test040_print(self):
+        #        flg_verbose = False
+        #tree = parse_html.parse_file(file_path, flg_verbose)
+        self.test030_augment()
+        
+        
+      
     def test910_SimpleCreation(self):
         print("**** TEST {} ****".format(get_self()))
         HTMLdataDir = os.getcwd() + r"\..\..\data"

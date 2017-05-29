@@ -18,12 +18,14 @@ from utility_inspect import get_self, get_parent
 import unittest
 from config import *
 import itertools
-from exergyframes import exergy_frame as xrg
-from exergyframes import exergy_frame2 as xrg2
+#from exergy_frames import exergy_frame as xrg
+#from exergyframes import exergy_frame2 as xrg2
+import exergy_frame as xrg
+#from exergy_frame import exergy_frame as xrg
 import numpy as np
 from utility_path import filter_files_dir
 
-from UtilityGUI import simpleYesNo
+from utility_GUI import simpleYesNo
 
 from utility_path import filter_files_dir,get_latest_rev
 import utility_path as util_paths
@@ -31,14 +33,13 @@ import lxml.html
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 import collections
-from UtilityXML import printXML
+from utility_XML import printXML
 import pandas as pd
 import re
 from collections import defaultdict
-from utility_excel import ExcelBookAPI
 import xlwt
 import xlrd
-from utility_excel import ExcelBookAPI
+from utility_excel_api import ExtendedExcelBookAPI
 import shutil
 
 import pandas as pd
@@ -143,7 +144,7 @@ def convert_kWh_MWh(array):
     array = array / 3000
     return array
 
-#--- Get sections
+#--- Get extra data items
 def get_avg_Uvals(parseTree):
     sectionName = 'Envelope Summary'
     tableName = 'Opaque Exterior'
@@ -158,6 +159,8 @@ def get_avg_Uvals(parseTree):
     avgU = area_weighted_U / total_area
     oneRow = ['Item','Envelope', 'Average External U', avgU]
     oneRow = add_row_key(oneRow)
+    
+    logging.debug("{} - {}".format(get_self(), oneRow))
     return [oneRow]
 
 def get_avg_window_Uval(parseTree):
@@ -172,6 +175,8 @@ def get_avg_window_Uval(parseTree):
 
     avgU = area_weighted_U / total_area
     one_row = add_row_key(['Item','Envelope', 'Average Window U', avgU])
+    logging.debug("{} - {}".format(get_self(), one_row))
+    
     return [one_row]
 
 
@@ -180,8 +185,7 @@ def get_zone_summary(parseTree):
     tableName = 'Zone Summary'
     table = expand_table_node(parseTree[sectionName][tableName])
 
-
-    return [
+    rows = [
             add_row_key(['Zone Summary','Total Area', 'm2', table[-4][1]] )                  ,
             add_row_key(['Zone Summary','Conditioned Area', 'm2', table[-3][1]])             ,
             add_row_key(['Zone Summary','Unconditioned Area', 'm2', table[-2][1]])           ,
@@ -192,6 +196,10 @@ def get_zone_summary(parseTree):
             add_row_key(['Zone Summary','Avg Occupancy Density', 'm2/Pers', table[-4][9]])  ,
             add_row_key(['Zone Summary','Avg Plug load', 'W/m2 [-]', table[-4][10]])         ,
             ]
+    
+    logging.debug("{} - {}".format(get_self(), rows))
+
+    return rows 
 
 
 def get_sensible_breakdown(parseTree):
@@ -210,6 +218,8 @@ def get_sensible_breakdown(parseTree):
 
 
     #raise
+    
+    logging.debug("{} - {}".format(get_self(), rowkeys))
 
     return rowkeys
 
@@ -218,17 +228,14 @@ def get_lighting(parseTree):
     sectionName = 'Lighting Summary'
     tableName = 'Interior Lighting'
 
-
     table = expand_table_node(parseTree[sectionName][tableName])
-
 
     lastRow = table[-1]
 
     oneRow = ['Item','Lighting', 'Average LPD [W/m2]', lastRow[2]]
     oneRow = add_row_key(oneRow)
+    logging.debug("{} - {}".format(get_self(), oneRow))
     return [oneRow]
-
-
 
 
 def get_minimum_outside_air(parseTree):
@@ -265,6 +272,8 @@ def get_minimum_outside_air(parseTree):
 
     oneRow = ['Item',sectionName, 'Minimum outdoor air occupied [m3/s]', total_vent_m3s]
     oneRow = add_row_key(oneRow)
+    logging.debug("{} - {}".format(get_self(), oneRow))
+    
     return [oneRow]
 
 
@@ -337,6 +346,8 @@ def get_average_autside_air(parseTree):
 #
     oneRow = ['Item',sectionName, 'Average outdoor air occupied [m3/s]', total_vent_m3s]
     oneRow = add_row_key(oneRow)
+    logging.debug("{} - {}".format(get_self(), oneRow))
+    
     return [oneRow]
 
 def get_windows(parseTree):
@@ -369,6 +380,9 @@ def get_windows(parseTree):
               add_row_key(['Item',sectionName, 'Average glass SHGC', shgc]),
               add_row_key(['Item',sectionName, 'Average glass visible transmittance', vis_trans]),
               ]
+    
+    logging.debug("{} - {}".format(get_self(), rows))
+    
     return rows
 
 
@@ -415,6 +429,8 @@ def get_zone_cooling_sizing(parseTree):
               add_row_key(['Item',sectionName, 'Total User Design Cooling Air Flow [m3/s]', user_air]),
 
               ]
+    logging.debug("{} - {}".format(get_self(), rows))
+              
     return rows
 
 def get_zone_heating_sizing(parseTree):
@@ -460,6 +476,8 @@ def get_zone_heating_sizing(parseTree):
               add_row_key(['Item',sectionName, 'Total User Design Heating Air Flow [m3/s]', user_air]),
 
               ]
+    logging.debug("{} - {}".format(get_self(), rows))
+    
     return rows
 
 
@@ -653,9 +671,36 @@ def get_zone_summary_tables(inputDir):
     xrg2.write_dict_to_excel(df_dict, out_file_path_xlsx)
     logging.debug("Retrieved {} zone summary table into dataframes in {}".format(len(df_dict),inputDir))
 
+def augment_data_tables(extracted_tables,tree):
+
+    extracted_tables = extracted_tables + get_lighting(tree)
+    extracted_tables = extracted_tables + get_avg_Uvals(tree)
+    extracted_tables = extracted_tables + get_avg_window_Uval(tree)
+    extracted_tables = extracted_tables + get_zone_summary(tree)
+    extracted_tables = extracted_tables + get_sensible_breakdown(tree)
+    extracted_tables = extracted_tables + get_average_autside_air(tree)
+    extracted_tables = extracted_tables + get_minimum_outside_air(tree)
+    extracted_tables = extracted_tables + get_windows(tree)
+    try: 
+        extracted_tables = extracted_tables + get_zone_cooling_sizing(tree)
+        extracted_tables = extracted_tables + get_zone_heating_sizing(tree)
+    except: 
+        pass
+
+
+
+def validate_tables(extracted_tables):
+    # Check lengths are equal
+    last_length = None
+    for row in extracted_tables:
+        if not last_length:
+            last_length = len(row)
+            continue
+        assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
+
 def run_project(inputDir,loc_post_excel):
     """Main script
-    1. Get all files as lxml
+    #
 
     """
     outputFile = inputDir + r"\00results"
@@ -665,74 +710,40 @@ def run_project(inputDir,loc_post_excel):
     assert(len(htmlFilePaths) != 0), "No html files found"
 
     tables_list = list()
-
     # Loop over files
     index_array = list()
     for path_file in htmlFilePaths:
 
         logging.debug("Processing {}".format(path_file))
 
-        #--- 1. Get tree structure
+        #--- 1. Get tree structure as lxml 
         # The tree is a dict of dicts, by [section_name][table_name] = NODE ELEMENT
         tree = parse_file(path_file)
 
         extracted_tables = list()
 
-        #--- 2.
+        #--- 2. Process html node into a python data structure
+        
+        extracted_tables = extract_tables(tree)
 
-        for table_def in TABLES:
-            # Get the definition
-            section_name = table_def['section']
-            table_name = table_def['table']
-
-            logging.debug("Getting table {} - {}".format(section_name,table_name))
-
-            this_table = get_one_table(tree, section_name,table_name)
-
-            # Then take this newly updated dictionary entry and serialize it
-            this_table = serialize_table(this_table)
-
-            # Add the section name
-            this_table = [[section_name]+row for row in this_table]
-
-            # Create a key
-            this_table = [[" ".join(row[:-1])] + row for row in this_table]
-
-            extracted_tables = extracted_tables + this_table
-
-        #logging.debug("Finished processing {}".format(extracted_tables))
+        logging.debug("Finished processing {}".format(extracted_tables))
 
         ### Finished with all tables
 
         title = get_title(path_file, "Building: ")
         index_array.append(title)
 
-        #---
-
-
-        extracted_tables = extracted_tables + get_lighting(tree)
-        extracted_tables = extracted_tables + get_avg_Uvals(tree)
-        extracted_tables = extracted_tables + get_avg_window_Uval(tree)
-        extracted_tables = extracted_tables + get_zone_summary(tree)
-        extracted_tables = extracted_tables + get_sensible_breakdown(tree)
-        extracted_tables = extracted_tables + get_average_autside_air(tree)
-        extracted_tables = extracted_tables + get_minimum_outside_air(tree)
-        extracted_tables = extracted_tables + get_windows(tree)
-        extracted_tables = extracted_tables + get_zone_cooling_sizing(tree)
-        extracted_tables = extracted_tables + get_zone_heating_sizing(tree)
-
-        # Check lengths are equal
-        last_length = None
-        for row in extracted_tables:
-            if not last_length:
-                last_length = len(row)
-                continue
-            assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
+        #--- 3. Augment table with summary items()
+        
+        extracted_tables = augment_data_tables(extracted_tables)
+        
+        #--- 4. Validate tables
+        validate_tables(extracted_tables)                
 
         # Done with this file
         tables_list.append(extracted_tables)
 
-    # Process each resulting list from each file
+    #--- Process each resulting list from each file
     headers_def = ["key","section","table","units"]
 
     data = list()
@@ -788,7 +799,7 @@ def run_project(inputDir,loc_post_excel):
 
     util_paths.copy_file(loc_post_excel,xlsFullPath)
 
-    xl = ExcelBookAPI(xlsFullPath,autocreate = True)
+    xl = ExtendedExcelBookAPI(xlsFullPath,autocreate = True)
 
     #comparison_frame.saveToExcelAPI(xl,'Comparison', flgTranspose = True)
     xl.write('DATABASE',rows,x=0,y=0)
@@ -800,6 +811,44 @@ def run_project(inputDir,loc_post_excel):
 
     comparison_frame.saveToCSV(outputFile, flgTranspose = True)
     #raise
+
+def extract_tables(tree):
+    """This function iterates over all table definitions i.e.:
+        {'section'     :   'Annual Building Utility Performance Summary',  'table'       :   'Site and Source Energy'  }
+    First, the data is collected as a 2D table, converted into python
+    Second, this 2D table is serialized for excel, i.e.: 
+        row_name, col_name, data
+    """
+    extracted_tables = list()
+    
+    for table_def in TABLES:
+        # Get the definition
+        section_name = table_def['section']
+        table_name = table_def['table']
+
+        logging.debug("Getting table {} - {}".format(section_name,table_name))
+
+        this_table = get_one_table(tree, section_name,table_name)
+
+        # Then take this newly updated dictionary entry and serialize it
+        this_table = serialize_table(this_table)
+
+        # Add the section name
+        this_table = [[section_name]+row for row in this_table]
+
+        # Create a key
+        this_table = [[" ".join(row[:-1])] + row for row in this_table]
+
+        extracted_tables = extracted_tables + this_table
+        
+    logging.debug("Processed tables into {} serial data rows".format(len(extracted_tables)))
+    #print(extracted_tables)
+    #print(extracted_tables[0])
+    return extracted_tables
+
+
+
+
 
 def parse_file(thisTableFileName,flg_verbose = False):
     """
@@ -875,8 +924,6 @@ def parse_file(thisTableFileName,flg_verbose = False):
 
     logging.info("Loaded {} tables from {} sections".format(numTables,len(sectionDict)))
 
-
-
     return sectionDict
 
 
@@ -920,8 +967,8 @@ if __name__ == "__main__":
 
         target_report_path = get_latest_rev(HTMLdataDir, r"^LEED PostProcess", ext_pat = "xlsx")
 
-        wb = ExcelBookAPI(target_report_path)
-        with ExcelBookAPI(target_report_path) as excel:
+        wb = ExtendedExcelBookAPI(target_report_path)
+        with ExtendedExcelBookAPI(target_report_path) as excel:
             #print excel.book
             assert(excel.sheetExists(u'DATABASE'))
             sheet = excel.book.Sheets(u'DATABASE')
@@ -934,7 +981,7 @@ if __name__ == "__main__":
         #print sh
         #for row in sh:
         #    print row
-        #excel_template = ExcelBookAPI(HTML_template_dir)
+        #excel_template = ExtendedExcelBookAPI(HTML_template_dir)
         #excel_template.getSheetNames()
 
         #print xlwt

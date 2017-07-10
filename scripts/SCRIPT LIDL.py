@@ -11,22 +11,14 @@ Template demonstrates how to run the IDF script to create variants from excel fi
 import logging.config
 from config import *
 
-import sys
-for this_dir in sys.path:
-    print(this_dir)
-
-#from UtilityExcel import ExcelBookRead
-#from utilities_base import applyTemplateNewStyle
-import utilities_base as util_base
+import utilities_idf as util_idf
 from idf_parser import IDF as IDF 
 from utility_print_table import PrettyTable,printTable
-
-
 
 def idfAssembly(projectFile,weatherFilePath,outputDirPath,groupName):
     
     """
-    A wrapper utility script to automate everthing
+    A wrapper utility script to automate everything
     """
     
     templatesList = IDF.loadTemplates(IDF_TEMPLATE_PATH)

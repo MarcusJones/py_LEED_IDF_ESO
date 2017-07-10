@@ -3,6 +3,7 @@
 	<name>py_LEED_IDF_ESO</name>
 	<comment></comment>
 	<projects>
+		<project>py_EnergyParser</project>
 		<project>py_ExergyUtilities</project>
 	</projects>
 	<buildSpec>

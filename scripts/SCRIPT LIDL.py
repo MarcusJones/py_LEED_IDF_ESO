@@ -4,18 +4,86 @@ Created on Aug 3, 2011
 @author: Marcus Jones
 
 Template demonstrates how to run the IDF script to create variants from excel file
-
-
 '''
-
-import logging.config
+#--- SETUP Config
 from config import *
+import unittest
 
+#--- SETUP Logging
+import logging.config
+print(ABSOLUTE_LOGGING_PATH)
+logging.config.fileConfig(ABSOLUTE_LOGGING_PATH)
+myLogger = logging.getLogger()
+myLogger.setLevel("DEBUG")
+
+#--- SETUP Standard modules
+import os
+import re
+
+#--- SETUP Custom modules
+from utility_inspect import get_self
 import utilities_idf as util_idf
 from idf_parser import IDF as IDF 
 from utility_print_table import PrettyTable,printTable
+from utility_logger import LoggerCritical, LoggerDebug
+from utility_path import get_files_by_ext_recurse
 
-def idfAssembly(projectFile,weatherFilePath,outputDirPath,groupName):
+def get_templates(templatePath, filter_regex_string = ".", flgExact = True):
+    
+    # Used to be a method on IDF class
+    # This is just a filter for file names now...
+    """Given a path, return a list of matching IDF files (by regex), and load into IDF objects
+    """ 
+    
+    templates = list()
+    
+    
+    if flgExact:
+        filter_regex_string = "^" + filter_regex_string + "*$"
+
+    with LoggerCritical():
+        for path in get_files_by_ext_recurse(templatePath, "idf"):
+            #print(path)
+            base = os.path.basename(path)
+            template_file_name = os.path.splitext(base)[0]
+            #print(template_file_name)
+            if  re.search(filter_regex_string,template_file_name):
+                #print(path)
+                template=IDF.from_IDF_file(path,template_file_name)
+                #template.getTemplateInfo()
+                templates.append(template)
+    
+    # No duplicates!
+    assert(len(templates) == len(set(templates)))
+    
+    #print(len(templates))
+    #print(len(set(templates)))
+    
+    #num_duplicates = len(templates) - len(set(templates))
+    #assert len(templates), "{}, duplicate templates found in {}".format(num_duplicates,IDF_TEMPLATE_PATH)
+    
+#    assert(len(thisTemplate) == 1), "Template; {} found {} matches {}".format(templateDef['templateName'],
+#                    len(thisTemplate),thisTemplate)
+#    thisTemplate = thisTemplate[0]    
+        
+    
+    logging.debug("Found {} templates in {} filtered {}".format(len(templates),IDF_TEMPLATE_PATH, filter_regex_string))
+    
+    return templates
+
+
+
+#--- 
+#--- 
+#--- 
+#--- 
+#---  
+
+
+
+
+
+def idf_assembly(projectFile,weatherFilePath,outputDirPath,groupName):
     
     """
     A wrapper utility script to automate everything
@@ -88,7 +156,7 @@ def idfAssembly(projectFile,weatherFilePath,outputDirPath,groupName):
  
 
 
-def templateProject():
+def process_project():
     #===========================================================================
     # directories
     #===========================================================================
@@ -97,23 +165,26 @@ def templateProject():
     outputDirPath = FREELANCE_DIR + r"\Simulation"    
     groupName = "00myGroup"
     
+    
+
+
+    #--- Get templates from directory     
+    get_templates(IDF_TEMPLATE_PATH)
     #===========================================================================
     # Assemble!
     #===========================================================================
-    idfAssembly(projectFile,weatherFilePath,outputDirPath,groupName)
+    #    idfAssembly(projectFile,weatherFilePath,outputDirPath,groupName)
     
-
 if __name__ == "__main__":
     print(ABSOLUTE_LOGGING_PATH)
     logging.config.fileConfig(ABSOLUTE_LOGGING_PATH)
-    
     
     myLogger = logging.getLogger()
     myLogger.setLevel("DEBUG")
     
     logging.info("Started IDF test script")
     
-    templateProject()
+    process_project()
 
     logging.info("Finished IDF test script")                
     

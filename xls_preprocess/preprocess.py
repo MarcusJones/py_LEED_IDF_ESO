@@ -44,12 +44,12 @@ def check_out_dir():
         else:
             pass
 
-def process_project(excel_project_dir, path_idf_base):
+def process_project_OLD(excel_project_dir, path_idf_base):
 
     #print
     check_out_dir()
     #excelProjectPath =
-
+    
     thisProjDefRoot = FREELANCE_DIR
 
     # Path to IDD XML (In the SVN repo, relies on current working dir)

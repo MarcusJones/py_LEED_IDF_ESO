@@ -218,7 +218,7 @@ def get_templates(templatePath, filter_regex_string = ".", flgExact = True):
     return templates
 
 
-def idf_assembly(variants,templates,projectFile,weather_file_path,output_dir_path):
+def idf_assembly(variants,templates,IDD_xml,weather_file_path,output_dir_path):
     
     """
     A wrapper utility script to automate everthing
@@ -234,7 +234,7 @@ def idf_assembly(variants,templates,projectFile,weather_file_path,output_dir_pat
         variant_def = variants[key]
         #pprint(variant_def)
         
-        #---Create a new IDF from the variant_def
+        #--- Create a new IDF from the variant_def
         this_IDF = IDF.from_IDF_file(variant_def['source'])
         
         
@@ -251,15 +251,14 @@ def idf_assembly(variants,templates,projectFile,weather_file_path,output_dir_pat
                 #print_table(class_count_table)
                 this_IDF = util_xml.clean_out_object(this_IDF, kept_classes_dict[flag_argument])
         
+        #--- Apply unique templates      
         
-        
-        raise
-        
-        #raise
-        
-        # Apply unique templates
-        for template in variant_def.templateDescriptions:
-            this_IDF.applyTemplateNewStyle(template,templates)
+        for this_template in templates:
+            #print(this_template)
+            
+            util_xml.apply_template(this_IDF, IDD_xml, this_template, zoneNames = ".", templateName = "No name", uniqueName = None)
+            raise
+            #this_IDF.applyTemplateNewStyle(template,templates)
             
         # Apply changes
         if variant_def.changesList:
@@ -486,11 +485,15 @@ def process_project():
     #--- Get excel project variant definitions
     excel_project_dir = get_latest_rev(proj['path_proj_excel'], r"^Input Data", ext_pat = "xlsx")
     variants = load_variants(excel_project_dir,proj['idf_base'])
-
+    
+    #--- Load IDD
+    
+    IDD_xml = IDF.from_IDD_file(IDD_FILE_PATH)
+    
     #--- Assemble variants
     proj['weather_file']
-    idf_assembly(variants,templates,projectFile,proj['weather_file'],proj['output_dir'])
-
+    idf_assembly(variants,templates,IDD_xml,proj['weather_file'],proj['output_dir'])
+    
     
     
 

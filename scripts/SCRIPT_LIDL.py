@@ -257,9 +257,9 @@ def idf_assembly(variants,templates,IDD_xml,weather_file_path,output_dir_path):
             #print(this_template)
             
             util_xml.apply_template(this_IDF, IDD_xml, this_template, zoneNames = ".", templateName = "No name", uniqueName = None)
-            raise
+            #raise
             #this_IDF.applyTemplateNewStyle(template,templates)
-            
+        raise
         # Apply changes
         if variant_def.changesList:
             for change in variant_def.changesList:

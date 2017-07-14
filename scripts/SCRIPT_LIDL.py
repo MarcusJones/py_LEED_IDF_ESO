@@ -476,7 +476,7 @@ def process_project():
     #===========================================================================
     projectFile = r"C:\Eclipse\PyIDF\ExcelTemplates\Input Data Tower SO03 r06.xlsx"
     weatherFilePath = FREELANCE_DIR + r"\WEA\ARE_Abu.Dhabi.412170_IWEC.epw"
-    outputDirPath = FREELANCE_DIR + r"\Simulation"    
+    outputDirPath = FREELANCE_DIR + r"\Simulation"
     groupName = "00myGroup"
 
     #--- Get templates from directory     
@@ -488,7 +488,8 @@ def process_project():
     
     #--- Load IDD
     
-    IDD_xml = IDF.from_IDD_file(IDD_FILE_PATH)
+    IDD_xml = IDF.from_XML_file(IDD_XML_FILE_PATH)
+    #IDD_xml = IDF.from_IDD_file(IDD_FILE_PATH)
     
     #--- Assemble variants
     proj['weather_file']

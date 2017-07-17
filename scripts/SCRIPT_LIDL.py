@@ -19,8 +19,10 @@ myLogger.setLevel("DEBUG")
 #--- SETUP Standard modules
 import os
 import re
+import csv
 from pprint import pprint
 from collections import defaultdict
+from shutil import copyfile
 
 #--- SETUP 3rd party modules
 
@@ -30,7 +32,7 @@ from collections import defaultdict
 from idf_parser import IDF as IDF 
 #from utility_print_table import PrettyTable,printTable
 from utility_logger import LoggerCritical, LoggerDebug
-from utility_path import get_files_by_ext_recurse, get_latest_rev
+from utility_path import get_files_by_ext_recurse, get_latest_rev, copy_file
 #from utility_excel_api import ExtendedExcelBookAPI
 from utility_excel import ExcelBookRead2
 from kept_classes import kept_classes_dict
@@ -43,6 +45,8 @@ PROJ_LIDL = {
                   'idf_base' : r'C:\Dropbox\16336 LIDL\IDF Project\IDF\\',
                   'weather_file' : r'C:\Dropbox\16336 LIDL\Weather\SVN_Ljubljana.130140_IWEC.epw',
                   'output_dir' : r"C:\IDF_OUT\\",
+                  'path_weather_file' : r"C:\Dropbox\16336 LIDL\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                  'idf_output_dir' :r"C:\Dropbox\16336 LIDL\IDF Project\OUTPUT\\", 
                   }
 
 proj = PROJ_LIDL
@@ -218,17 +222,12 @@ def get_templates(templatePath, filter_regex_string = ".", flgExact = True):
     return templates
 
 
-def idf_assembly(variants,templates,IDD_xml,weather_file_path,output_dir_path):
+def idf_assembly(variants,templates,IDD_xml,proj_def):
     
     """
     A wrapper utility script to automate everthing
     """
-        
-    groupName = "Group name"
-    
-    groupFilePath = output_dir_path + r"\\" + groupName + ".epg"
-    
-    outputTargetAbsDir = os.path.normpath(output_dir_path)
+
     #--- Iterate variant_def definitions
     for key in variants:
         variant_def = variants[key]
@@ -238,7 +237,7 @@ def idf_assembly(variants,templates,IDD_xml,weather_file_path,output_dir_path):
         this_IDF = IDF.from_IDF_file(variant_def['source'])
         
         
-        #-- Process flags
+        #--- Process flags
         #pprint(variant_def['flags'])
         for flag_def in variant_def['flags']:
             flag_function = flag_def['flag']
@@ -246,37 +245,96 @@ def idf_assembly(variants,templates,IDD_xml,weather_file_path,output_dir_path):
             #print(flag_function,flag_argument)
             #--- Flag cleanOut found
             if flag_function == 'cleanOut':
-                #class_count_table = util_xml.get_table_object_count(this_IDF)
-                #print(class_table)
-                #print_table(class_count_table)
+                if 0:
+                    class_count_table = util_xml.get_table_object_count(this_IDF)
+                    print_table(class_count_table)
+                
                 this_IDF = util_xml.clean_out_object(this_IDF, kept_classes_dict[flag_argument])
+                
+                if 1:
+                    class_count_table = util_xml.get_table_object_count(this_IDF)
+                    print_table(class_count_table)
+                
+        #--- Process deletions
+        #raise
+        for deletion in variant_def['deletes']:
+            util_xml.delete_classes_from_excel(this_IDF, IDD_xml, deletion)
         
-        #--- Apply unique templates      
+        #--- Apply unique templates
+        loaded_templates_names = [this_template.ID for this_template in templates]
+        indexed_templates = list(zip(loaded_templates_names,templates))
+        templates_dict = dict(indexed_templates)
+        #print(templates_dict)
         
-        for this_template in templates:
-            #print(this_template)
+        #raise
+        for template_def in variant_def['templates']:
+            template_name = template_def['templateName']
+            template_def['uniqueName']
             
-            util_xml.apply_template(this_IDF, IDD_xml, this_template, zoneNames = ".", templateName = "No name", uniqueName = None)
-            #raise
-            #this_IDF.applyTemplateNewStyle(template,templates)
-        raise
-        # Apply changes
-        if variant_def.changesList:
-            for change in variant_def.changesList:
-                this_IDF.selectCommentedAttrInNamedObjectAndChange(change)
+            assert(template_def['templateName'] in templates_dict), "{} not in templates".format(template_def['templateName'])
+            
+            util_xml.apply_template(this_IDF, 
+                                    IDD_xml, 
+                                    templates_dict[template_name], 
+                                    zoneNames = template_def['zones'], 
+                                    templateName = template_name, 
+                                    uniqueName = None)
 
-        this_IDF.convertXMLtoIDF()
         
-        this_IDF.writeIdf(this_IDF.pathIdfOutput)
+        #--- Apply changes
+        #pprint(variant_def)
+        for change in variant_def['changes']:
+            util_xml.apply_change(this_IDF,IDD_xml,change)
+        #--- Convert
+        this_IDF.convert_XML_to_IDF()
+        
+        #--- Save to variant
+        variants[key]['IDF_obj'] = this_IDF
+        
+        
+        #--- Write to file
+        
+        output_filename = variant_def['description'] + ".idf"
+        out_path = os.path.abspath(proj_def['idf_output_dir']+output_filename)
+        variants[key]['out_path']  = out_path
+        
+        #--- Cleanup
+        variants[key].pop('changes')
+        variants[key].pop('deletes')
+        variants[key].pop('flags')
+        variants[key].pop('templates')
+        
+        #print(out_path)
+        #raise
+        #this_IDF.write_IDF(out_path)
+        #raise
     
+    return variants
+
+def write_group_files(variants,proj_def):
     #===============================================================================
     # Write the group file
     #===============================================================================
         
-    csvout = csv.writer(open(groupFilePath, 'wb'))
+    groupName = "Group name"
     
-    for variant_def in variants:
-        thisRow = [variant_def.targetDirAbsPath,weather_file_path,variant_def.targetDirAbsPath,"1"]
+    outputTargetAbsDir = os.path.normpath(proj_def['idf_output_dir'])
+    
+    groupFilePath = outputTargetAbsDir + r"\\" + groupName + ".epg"
+    
+            
+    csvout = csv.writer(open(groupFilePath, 'w'))
+    
+    #for variant_def in variants:
+        
+    #pprint(variants)
+    #pprint(proj_def)
+    #raise
+    for key in variants:
+        variant_def = variants[key]
+        pprint(variant_def)
+        variant_def['IDF_obj'].write_IDF(variant_def['out_path'])
+        thisRow = [variant_def['out_path'],proj_def['weather_file_path'],variant_def['out_path'],"1"]
         csvout.writerow(thisRow)
         
     logging.info("Wrote the {0} variants to the group simulation file at: {1}".format(len(variants),groupFilePath))     
@@ -493,8 +551,17 @@ def process_project():
     
     #--- Assemble variants
     proj['weather_file']
-    idf_assembly(variants,templates,IDD_xml,proj['weather_file'],proj['output_dir'])
+    variants = idf_assembly(variants,templates,IDD_xml,proj)
+    pprint(variants)
     
+
+
+    #--- Write group
+    #PATH_WEATHER_FILE
+    proj['weather_file_path'] = proj['idf_output_dir']+"Weather.epw"
+    copy_file(proj['path_weather_file'], proj['weather_file_path'])
+    write_group_files(variants,proj)
+    raise
     
     
 

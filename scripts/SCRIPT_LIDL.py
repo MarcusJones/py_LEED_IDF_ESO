@@ -554,15 +554,12 @@ def process_project():
     variants = idf_assembly(variants,templates,IDD_xml,proj)
     pprint(variants)
     
-
-
     #--- Write group
     #PATH_WEATHER_FILE
     proj['weather_file_path'] = proj['idf_output_dir']+"Weather.epw"
     copy_file(proj['path_weather_file'], proj['weather_file_path'])
     write_group_files(variants,proj)
     raise
-    
     
 
 if __name__ == "__main__":

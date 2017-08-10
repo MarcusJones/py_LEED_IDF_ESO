@@ -144,20 +144,17 @@ def load_variants(inputExcelPath,path_idf_base):
                                      "description" : description,
                                      
                                      }
-
+    print()
     for var in variants:
         thisVar = variants[var]
         logging.debug("      *** {:>5} - {:<50} *** ".format("Variant",var))
-        
         logging.debug("{:>20} : {:<50}".format("templates",len(thisVar["templates"])))
-
         logging.debug("{:>20} : {:<50}".format("flags",len(thisVar["flags"])))
-                      
         logging.debug("{:>20} : {:<50}".format("deletes",len(thisVar["deletes"])))
         logging.debug("{:>20} : {:<50}".format("changes",len(thisVar["changes"])))
         logging.debug("{:>20} : {:<50}".format("description",thisVar["description"]))
         logging.debug("{:>20} : {:<50}".format("source",thisVar["source"]))
-   
+        print()
     logging.debug("Loaded {} variants from {}".format(len(variants),inputExcelPath))
 
     return variants
@@ -227,11 +224,19 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
     """
     A wrapper utility script to automate everthing
     """
+    
+    
 
+    
     #--- Iterate variant_def definitions
     for key in variants:
+        
         variant_def = variants[key]
         #pprint(variant_def)
+        print()
+        logging.debug("Processing variant {} {}".format(variant_def['description'],variant_def['source']))
+        #pprint(variant_def)
+
         
         #--- Create a new IDF from the variant_def
         this_IDF = IDF.from_IDF_file(variant_def['source'])
@@ -251,7 +256,7 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
                 
                 this_IDF = util_xml.clean_out_object(this_IDF, kept_classes_dict[flag_argument])
                 
-                if 1:
+                if 0:
                     class_count_table = util_xml.get_table_object_count(this_IDF)
                     print_table(class_count_table)
                 
@@ -285,6 +290,7 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
         #pprint(variant_def)
         for change in variant_def['changes']:
             util_xml.apply_change(this_IDF,IDD_xml,change)
+            
         #--- Convert
         this_IDF.convert_XML_to_IDF()
         
@@ -293,7 +299,6 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
         
         
         #--- Write to file
-        
         output_filename = variant_def['description'] + ".idf"
         out_path = os.path.abspath(proj_def['idf_output_dir']+output_filename)
         variants[key]['out_path']  = out_path
@@ -552,14 +557,14 @@ def process_project():
     #--- Assemble variants
     proj['weather_file']
     variants = idf_assembly(variants,templates,IDD_xml,proj)
-    pprint(variants)
+    #pprint(variants)
     
     #--- Write group
     #PATH_WEATHER_FILE
     proj['weather_file_path'] = proj['idf_output_dir']+"Weather.epw"
     copy_file(proj['path_weather_file'], proj['weather_file_path'])
     write_group_files(variants,proj)
-    raise
+    
     
 
 if __name__ == "__main__":

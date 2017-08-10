@@ -24,7 +24,7 @@ import unittest
 from utility_inspect import get_self, get_parent, list_object
 from utility_path import get_current_file_dir
 import re
-import exergyframes.exergy_frame2 as xrg2
+#import exergyframes.exergy_frame2 as xrg2
 
 from collections import defaultdict
 from numpy import genfromtxt

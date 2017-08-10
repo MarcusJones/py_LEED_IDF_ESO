@@ -9,40 +9,50 @@
 Etc.
 """
 
-#===============================================================================
-# Set up
-#===============================================================================
+#--- SETUP Config
 from __future__ import division
 import logging.config
-from utility_inspect import get_self, get_parent
-import unittest
 from config import *
-import itertools
-#from exergy_frames import exergy_frame as xrg
-#from exergyframes import exergy_frame2 as xrg2
-import exergy_frame as xrg
-#from exergy_frame import exergy_frame as xrg
-import numpy as np
-from utility_path import filter_files_dir
 
-from utility_GUI import simpleYesNo
 
-from utility_path import filter_files_dir,get_latest_rev
-import utility_path as util_paths
-import lxml.html
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-import collections
-from utility_XML import printXML
-import pandas as pd
+#--- SETUP Standard modules
+#import unittest
+#import itertools
+#import collections
+#from collections import defaultdict
 import re
-from collections import defaultdict
-import xlwt
-import xlrd
-from utility_excel_api import ExtendedExcelBookAPI
 import shutil
 
+
+#--- SETUP 3rd party modules
 import pandas as pd
+#import xlwt
+#import xlrd
+#import pandas as pd
+#from pprint import pprint
+#import exergy_frame as xrg
+import numpy as np
+import lxml.html
+#pp = pprint.PrettyPrinter(indent=4)
+
+
+#--- SETUP Custom modules
+#from utility_inspect import get_self, get_parent
+#from exergy_frames import exergy_frame as xrg
+#from exergyframes import exergy_frame2 as xrg2
+#from exergy_frame import exergy_frame as xrg
+
+
+#--- SETUP Utilities
+from utility_inspect import get_self, get_parent, list_object
+from utility_path import filter_files_dir
+#from utility_GUI import simpleYesNo
+#from utility_path import filter_files_dir,get_latest_rev
+#from utility_XML import printXML
+import utility_path as util_paths
+from utility_excel_api import ExtendedExcelBookAPI
+from util_pretty_print import print_table
+
 
 TABLES =[
          {'section'     :   'Annual Building Utility Performance Summary',  'table'       :   'Site and Source Energy'  },
@@ -53,11 +63,7 @@ TABLES =[
          {'section'      :  'Annual Building Utility Performance Summary',                   'table'       :  'Comfort and Setpoint Not Met Summary'   },
          {'section'      :                  'Input Verification and Results Summary',               'table'      :  'Window-Wall Ratio'                        },
          #{'section'      :                  'Sensible Heat Gain Summary',               'table'         :  'Window-Wall Ratio'                        },
-
-
           ]
-
-
 
 
 #--- Utility
@@ -538,7 +544,7 @@ def serialize_table(table_rows):
 
 def expand_table_node(node):
     """
-    Convert a table node into a full 2D array of table values
+    Convert a table node into a 2D array of table values
     """
     table_rows = list()
     # Loop over rows
@@ -559,7 +565,6 @@ def expand_table_node(node):
             thisRow.append(text)
         # Append rows
         table_rows.append(thisRow)
-
 
     return table_rows
 
@@ -687,7 +692,7 @@ def augment_data_tables(extracted_tables,tree):
     except: 
         pass
 
-
+    return extracted_tables
 
 def validate_tables(extracted_tables):
     # Check lengths are equal
@@ -703,6 +708,9 @@ def run_project(inputDir,loc_post_excel):
     #
 
     """
+    
+    logging.debug("Processing {} {}".format(inputDir,loc_post_excel))
+
     outputFile = inputDir + r"\00results"
     xlsFullPath = outputFile + ".xlsx"
 
@@ -720,10 +728,8 @@ def run_project(inputDir,loc_post_excel):
         # The tree is a dict of dicts, by [section_name][table_name] = NODE ELEMENT
         tree = parse_file(path_file)
 
-        extracted_tables = list()
-
         #--- 2. Process html node into a python data structure
-        
+        extracted_tables = list()
         extracted_tables = extract_tables(tree)
 
         logging.debug("Finished processing {}".format(extracted_tables))
@@ -732,31 +738,56 @@ def run_project(inputDir,loc_post_excel):
 
         title = get_title(path_file, "Building: ")
         index_array.append(title)
-
-        #--- 3. Augment table with summary items()
         
-        extracted_tables = augment_data_tables(extracted_tables)
+        #for row in extracted_tables:
+        #    print(row)
+        
+        #--- 3. Augment table with summary items()
+        extracted_tables = augment_data_tables(extracted_tables,tree)
         
         #--- 4. Validate tables
-        validate_tables(extracted_tables)                
+        validate_tables(extracted_tables)
 
         # Done with this file
         tables_list.append(extracted_tables)
 
     #--- Process each resulting list from each file
     headers_def = ["key","section","table","units"]
-
+    
     data = list()
+    
     headers = None
 
-    # Assemble one big data array
+    #--- Assemble one big data array
     for this_table in tables_list:
+        #raise
+        #print_table(this_table)
+        #raise
+        
         data.append([row.pop() for row in this_table])
         if headers == None:
             headers=transpose(this_table)
         else:
             assert(headers == transpose(this_table))
-
+    
+    print_table(headers)
+    print_table(data)
+    print(index_array)
+    print(headers_def)
+    raise
+    #print("HEADERS DEF")    
+    #print(headers_def)
+    #print("HEADERS")
+    #print(headers)    
+    #print("DATA")
+    #print(data)
+    #print("INDEX")
+    #print(index_array)
+    
+    #print_table(data)
+    
+    #raise
+    
     # This is the old ExergyFrame
     comparison_frame = xrg.ExergyFrame(
         name="Test",
@@ -829,7 +860,7 @@ def extract_tables(tree):
         logging.debug("Getting table {} - {}".format(section_name,table_name))
 
         this_table = get_one_table(tree, section_name,table_name)
-
+        
         # Then take this newly updated dictionary entry and serialize it
         this_table = serialize_table(this_table)
 
@@ -838,12 +869,10 @@ def extract_tables(tree):
 
         # Create a key
         this_table = [[" ".join(row[:-1])] + row for row in this_table]
-
+        #print_table(this_table)
         extracted_tables = extracted_tables + this_table
         
     logging.debug("Processed tables into {} serial data rows".format(len(extracted_tables)))
-    #print(extracted_tables)
-    #print(extracted_tables[0])
     return extracted_tables
 
 

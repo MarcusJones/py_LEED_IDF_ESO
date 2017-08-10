@@ -5,35 +5,43 @@
 # 01 - 2012MAR17 - Update to ...
 #===============================================================================
 
-"""This module does A and B.
-Etc.
 """
+Created on Aug 3, 2011
 
-#===============================================================================
-# Set up
-#===============================================================================
+@author: Marcus Jones
+
+Post process HTML files from energyplus run
+"""
+#--- SETUP Config
 from __future__ import division
 import logging.config
-from utility_inspect import whoami, whosdaddy
+#from utility_inspect import whoami, whosdaddy
 from config import *
-import idf_xml.IDF as IDF
-import utility_path as util_paths
-#from html_summary.parse_html import run_project,get_zone_summary_tables
 
-import html_summary.parse_html as p_html
-import parse_eso.parse_eso2 as p_eso
+#--- SETUP Standard modules
+import re
+import os
 
-
+#--- SETUP 3rd party modules
 import pandas as pd
 pd.set_option('display.width', 500)
-import re
+
+
+#--- SETUP Custom modules
+#from idf_parser import IDF as IDF 
+import utility_path as util_paths
+#from html_summary.parse_html import run_project,get_zone_summary_tables
+import parse_html as p_html
+#import parse_eso2 as p_eso
+
+
 #import html_summary.ParseHTMLTables as htPr
 #===============================================================================
 # Code
 #===============================================================================
 
 def parseSummary():
-    project_dir = FREELANCE_DIR + r"\IDFout"
+    project_dir = OUTPUT_DIR
 
     #project_dir = r"C:\Projects2\081_Central_Admin2\140328 March review submission\\"
     #project_dir = r"D:\Projects\IDFout2\\"
@@ -42,13 +50,13 @@ def parseSummary():
         #===========================================================================
         # Parse HTML LEED files into one excel file
         #===========================================================================
-        loc_post_excel = r"C:\EclipseWorkspace\PyIDF\ExcelTemplates\LEED PostProcess r21.xlsx"
-
+        #loc_post_excel = r"C:\EclipseWorkspace\PyIDF\ExcelTemplates\LEED PostProcess r21.xlsx"
+        
         loc_post_excel = os.path.dirname(os.path.realpath(__file__)) + r"\..\ExcelTemplates\LEED PostProcess r22.xlsx"
         loc_post_excel = os.path.abspath( loc_post_excel )
-
+        
         p_html.run_project(project_dir,loc_post_excel)
-
+        
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         
     if 1:
@@ -136,14 +144,14 @@ def parseSummary():
 # Main
 #===============================================================================
 if __name__ == "__main__":
-    print ABSOLUTE_LOGGING_PATH
+    print(ABSOLUTE_LOGGING_PATH)
     logging.config.fileConfig(ABSOLUTE_LOGGING_PATH)
 
     myLogger = logging.getLogger()
     myLogger.setLevel("DEBUG")
 
     logging.debug("Started _main".format())
-
+    #raise
     parseSummary()
 
 

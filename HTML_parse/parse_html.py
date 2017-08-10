@@ -486,11 +486,6 @@ def get_zone_heating_sizing(parseTree):
     
     return rows
 
-
-
-
-#--- Process
-
 def get_title(thisTableFileName, searchHeading):
     root = lxml.html.parse(thisTableFileName)
     node = root.xpath("//p[text() = '{}']".format(searchHeading))[0]
@@ -498,6 +493,8 @@ def get_title(thisTableFileName, searchHeading):
     nextBold = node.xpath("b")[0]
 
     return nextBold.text.strip()
+
+#--- Process
 
 def serialize_table(table_rows):
     """
@@ -686,6 +683,7 @@ def augment_data_tables(extracted_tables,tree):
     extracted_tables = extracted_tables + get_average_autside_air(tree)
     extracted_tables = extracted_tables + get_minimum_outside_air(tree)
     extracted_tables = extracted_tables + get_windows(tree)
+    
     try: 
         extracted_tables = extracted_tables + get_zone_cooling_sizing(tree)
         extracted_tables = extracted_tables + get_zone_heating_sizing(tree)
@@ -760,34 +758,29 @@ def run_project(inputDir,loc_post_excel):
 
     #--- Assemble one big data array
     for this_table in tables_list:
-        #raise
-        #print_table(this_table)
-        #raise
-        
         data.append([row.pop() for row in this_table])
         if headers == None:
             headers=transpose(this_table)
         else:
             assert(headers == transpose(this_table))
+
+
+    data = list(zip(*data))
     
-    print_table(headers)
-    print_table(data)
-    print(index_array)
-    print(headers_def)
+    integers = list(range(0,5))
+    zipped = list(zip(index_array,integers,))
+    
+    column_names = [item[0]+str(item[1]) for item in zipped]
+    
+    m_index = pd.MultiIndex.from_arrays(headers,names = headers_def)
+    df = pd.DataFrame(data = data, index = m_index,columns = column_names)
+    
+    writer = pd.ExcelWriter('C:\\tempdel\\pandas_simple2.xlsx', engine='xlsxwriter')
+
+    df.to_excel(writer)
+    writer.save()
     raise
-    #print("HEADERS DEF")    
-    #print(headers_def)
-    #print("HEADERS")
-    #print(headers)    
-    #print("DATA")
-    #print(data)
-    #print("INDEX")
-    #print(index_array)
-    
-    #print_table(data)
-    
-    #raise
-    
+
     # This is the old ExergyFrame
     comparison_frame = xrg.ExergyFrame(
         name="Test",

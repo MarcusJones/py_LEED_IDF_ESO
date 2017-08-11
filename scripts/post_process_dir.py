@@ -51,10 +51,10 @@ def parseSummary():
         #===========================================================================
         #loc_post_excel = r"C:\EclipseWorkspace\PyIDF\ExcelTemplates\LEED PostProcess r21.xlsx"
         
-        loc_post_excel = os.path.dirname(os.path.realpath(__file__)) + r"\..\ExcelTemplates\LEED PostProcess r22.xlsx"
-        loc_post_excel = os.path.abspath( loc_post_excel )
+        #loc_post_excel = os.path.dirname(os.path.realpath(__file__)) + r"\..\ExcelTemplates\LEED PostProcess r23.xlsx"
+        #loc_post_excel = os.path.abspath( loc_post_excel )
         
-        p_html.run_project(project_dir,loc_post_excel)
+        p_html.run_project(project_dir,POST_PROC_EXCEL_FILE)
         
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         

@@ -736,15 +736,24 @@ def run_project(inputDir,loc_post_excel):
         logging.debug("Finished processing {}".format(extracted_tables))
 
         ### Finished with all tables
-
-        title = get_title(path_file, "Building: ")
-        index_array.append(title)
         
-        #for row in extracted_tables:
-        #    print(row)
+        # Get the title element
+        title = get_title(path_file, "Building: ")
+        
         
         #--- 3. Augment table with summary items()
         extracted_tables = augment_data_tables(extracted_tables,tree)
+        
+
+        #--- Extra processing for title, to add the rotation angle
+        for row in extracted_tables:
+            if row[0] == "Input Verification and Results Summary Rotation for Appendix G [deg] Value":
+                rotation = row[-1]
+                rotation = str(int(float(rotation)))
+        if "Proposed" not in title:
+            title = title + " " + rotation
+
+        index_array.append(title)
         
         #--- 4. Validate tables
         validate_tables(extracted_tables)
@@ -768,11 +777,16 @@ def run_project(inputDir,loc_post_excel):
             assert(headers == transpose(this_table))
 
     #--- Create MI Dataframe
-    #Transpose
+    # Transpose
     data = list(zip(*data))
-    integers = list(range(0,5))
-    zipped = list(zip(index_array,integers,))
-    column_names = [item[0]+str(item[1]) for item in zipped]
+    
+    # Write unique column names
+    #integers = list(range(0,5))
+    #zipped = list(zip(index_array,integers,))
+    #print(zipped)
+    #raise
+    #column_names = [item[0]+str(item[1]) for item in zipped]
+    column_names = index_array
     
     m_index = pd.MultiIndex.from_arrays(headers,names = headers_def)
     df = pd.DataFrame(data = data, index = m_index,columns = column_names)
@@ -800,19 +814,9 @@ def run_project(inputDir,loc_post_excel):
     
     writer.save()
     
+    logging.debug("Wrote df size {} to {}".format(df.shape,xlsFullPath))
+
     raise
-    xl = ExtendedExcelBookAPI(xlsFullPath,autocreate = True)
-
-    #comparison_frame.saveToExcelAPI(xl,'Comparison', flgTranspose = True)
-    xl.write('DATABASE',rows,x=0,y=0)
-    xl.saveAndClose()
-    xl.closeAll()
-
-
-    outputFile = inputDir + r"\00results.csv"
-
-    comparison_frame.saveToCSV(outputFile, flgTranspose = True)
-    #raise
 
 def extract_tables(tree):
     """This function iterates over all table definitions i.e.:

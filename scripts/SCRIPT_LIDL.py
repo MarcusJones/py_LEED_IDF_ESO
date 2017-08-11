@@ -6,7 +6,7 @@ Created on Aug 3, 2011
 Template demonstrates how to run the IDF script to create variants from excel file
 """
 #--- SETUP Config
-from config import *
+from config.config import *
 #import unittest
 
 #--- SETUP Logging
@@ -21,24 +21,26 @@ import os
 import re
 import csv
 from pprint import pprint
-from collections import defaultdict
-from shutil import copyfile
+#from collections import defaultdict
+#from shutil import copyfile
 
 #--- SETUP 3rd party modules
 
 #--- SETUP Custom modules
 #from utility_inspect import get_self
 #import utilities_idf as util_idf
-from idf_parser import IDF as IDF 
+from idf.idf_parser import IDF as IDF 
+import idf.utilities_xml as util_xml
+from idf.kept_classes import kept_classes_dict
 #from utility_print_table import PrettyTable,printTable
-from utility_logger import LoggerCritical, LoggerDebug
-from utility_path import get_files_by_ext_recurse, get_latest_rev, copy_file
+from ExergyUtilities.utility_logger import LoggerCritical, LoggerDebug
+from ExergyUtilities.utility_path import get_files_by_ext_recurse, get_latest_rev, copy_file
 #from utility_excel_api import ExtendedExcelBookAPI
-from utility_excel import ExcelBookRead2
-from kept_classes import kept_classes_dict
-from utility_inspect import list_attrs, list_object
-import utilities_xml as util_xml
-from util_pretty_print import print_table
+from ExergyUtilities.utility_excel import ExcelBookRead2
+
+#from ExergyUtilities.utility_inspect import list_attrs, list_object
+
+from ExergyUtilities.util_pretty_print import print_table
 
 PROJ_LIDL = {
                   'path_proj_excel' : r'C:\Dropbox\16336 LIDL\IDF Project\\',

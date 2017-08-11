@@ -12,8 +12,10 @@ Etc.
 #--- SETUP Config
 from __future__ import division
 import logging.config
-from config import *
+from config.config import *
 
+#import sys 
+#print('\n'.join(sys.path))
 
 #--- SETUP Standard modules
 #import unittest
@@ -34,6 +36,7 @@ import pandas as pd
 import numpy as np
 import lxml.html
 #pp = pprint.PrettyPrinter(indent=4)
+from openpyxl import load_workbook
 
 
 #--- SETUP Custom modules
@@ -44,14 +47,14 @@ import lxml.html
 
 
 #--- SETUP Utilities
-from utility_inspect import get_self, get_parent, list_object
-from utility_path import filter_files_dir
+from ExergyUtilities.utility_inspect import get_self, get_parent, list_object
+from ExergyUtilities.utility_path import filter_files_dir
 #from utility_GUI import simpleYesNo
 #from utility_path import filter_files_dir,get_latest_rev
 #from utility_XML import printXML
-import utility_path as util_paths
-from utility_excel_api import ExtendedExcelBookAPI
-from util_pretty_print import print_table
+import ExergyUtilities.utility_path as util_paths
+from ExergyUtilities.utility_excel_api import ExtendedExcelBookAPI
+from ExergyUtilities.util_pretty_print import print_table
 
 
 TABLES =[
@@ -764,65 +767,40 @@ def run_project(inputDir,loc_post_excel):
         else:
             assert(headers == transpose(this_table))
 
-
+    #--- Create MI Dataframe
+    #Transpose
     data = list(zip(*data))
-    
     integers = list(range(0,5))
     zipped = list(zip(index_array,integers,))
-    
     column_names = [item[0]+str(item[1]) for item in zipped]
     
     m_index = pd.MultiIndex.from_arrays(headers,names = headers_def)
     df = pd.DataFrame(data = data, index = m_index,columns = column_names)
     
-    writer = pd.ExcelWriter('C:\\tempdel\\pandas_simple2.xlsx', engine='xlsxwriter')
+    #--- Conversions
+    #massConvertGJ_kWh(comparison_frame)
+    #massConvertkWh_MWh(comparison_frame)
 
-    df.to_excel(writer)
-    writer.save()
-    raise
+    #--- Write the file
+    
 
-    # This is the old ExergyFrame
-    comparison_frame = xrg.ExergyFrame(
-        name="Test",
-        dataArray = data,
-        timeArray=index_array,
-        headersArray=headers,
-
-        headersDef= headers_def,
-        )
-
-    massConvertGJ_kWh(comparison_frame)
-    massConvertkWh_MWh(comparison_frame)
-
-    print(comparison_frame)
-
-    #--- Write
-    #xrg. xrg2
-
-
-    rows = comparison_frame.return_rows(flgTranspose = True)
-
-    #--- Work-around for unique excel DATABASE key
-    #print rows[0]
-    new_row = list()
-    appends = ['', '2', '3', '4']
-    for head in rows[0]:
-        if head == 'Baseline':
-            head = head + appends.pop(0)
-            new_row.append(head)
-        else:
-            new_row.append(head)
-
-    #print new_row
-    rows[0] = new_row
+    #df.to_excel(writer)
+    #writer.save()
     #raise
-    #xrg2.ExergyFrame()
-    #raise
-
-
 
     util_paths.copy_file(loc_post_excel,xlsFullPath)
+    book = load_workbook(xlsFullPath)
+    writer = pd.ExcelWriter(xlsFullPath, engine='openpyxl')
+    writer.book = book
+    writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
 
+    sheet_name = 'DATABASE'
+    
+    df.to_excel(writer, sheet_name = sheet_name, startrow = 0, startcol = 0)
+    
+    writer.save()
+    
+    raise
     xl = ExtendedExcelBookAPI(xlsFullPath,autocreate = True)
 
     #comparison_frame.saveToExcelAPI(xl,'Comparison', flgTranspose = True)

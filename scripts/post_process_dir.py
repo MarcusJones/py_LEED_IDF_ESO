@@ -16,7 +16,7 @@ Post process HTML files from energyplus run
 from __future__ import division
 import logging.config
 #from utility_inspect import whoami, whosdaddy
-from config import *
+from config.config import *
 
 #--- SETUP Standard modules
 import re
@@ -26,12 +26,11 @@ import os
 import pandas as pd
 pd.set_option('display.width', 500)
 
-
 #--- SETUP Custom modules
 #from idf_parser import IDF as IDF 
-import utility_path as util_paths
+import ExergyUtilities.utility_path as util_paths
 #from html_summary.parse_html import run_project,get_zone_summary_tables
-import parse_html as p_html
+import HTML_parse.parse_html as p_html
 #import parse_eso2 as p_eso
 
 

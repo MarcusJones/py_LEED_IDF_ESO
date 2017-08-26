@@ -227,9 +227,6 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
     A wrapper utility script to automate everthing
     """
     
-    
-
-    
     #--- Iterate variant_def definitions
     for key in variants:
         
@@ -347,193 +344,33 @@ def write_group_files(variants,proj_def):
     logging.info("Wrote the {0} variants to the group simulation file at: {1}".format(len(variants),groupFilePath))     
  
 
-
-
-
-
-def process_project_OLD(excel_project_dir, path_idf_base):
-    raise
-
-    #print
-    check_out_dir()
-    #excelProjectPath =
+def rename_zones():
+    raise Exception("This function is unfinished")
+    #===========================================================================
+    # directories
+    #===========================================================================
     
-    thisProjDefRoot = FREELANCE_DIR
-    
-    # Path to IDD XML (In the SVN repo, relies on current working dir)
-    thisProjRoot = split_up_path(os.getcwd())[:4]
-    path_IDD_XML = thisProjRoot + ["SampleIDFs"] + ["Energy+idd.xml"]
-    path_IDD_XML = os.path.join(*path_IDD_XML)
+    #--- Get excel project variant definitions
+    excel_project_dir = get_latest_rev(proj['path_proj_excel'], r"^Input Data", ext_pat = "xlsx")
+    variants = load_variants(excel_project_dir,proj['idf_base'])
 
-
-    # Weather file
-    pathWeather = thisProjDefRoot + r"\\081_CentralTowerFinal\WEA\SVK_Bratislava.118160_IWEC.epw"
-
-    logging.info("\t {:>20} : {:<50}".format("Project file",excel_project_dir))
-    logging.info("\t {:>20} : {:<50}".format("IDD file",path_IDD_XML))
-    logging.info("\t {:>20} : {:<50}".format("Weather file",pathWeather))
-    logging.info("\t {:>20} : {:<50}".format("Output directory",PATH_IDF_OUT))
-
-    IDDobj = idf.IDF.fromXmlFile(path_IDD_XML)
-    variants = idf.loadVariants(excel_project_dir,path_idf_base)
-
-    # All variants
-    varList = [var for var in variants.iteritems() if 1]
-
-    # Just one for testing?
-    #varList = [var for var in variants.iteritems() if var[0] == "VAV only"]
-    #varList = [var for var in variants.iteritems() if var[0] == "TESTING"]
-
-    for varName,variant in varList:
-        if re.search(r"^SKIP",varName,re.VERBOSE):
-            continue
-
-        logging.info("Working on variant {}: {}".format(varName,variant))
-
-        #=======================================================================
-        # GET IDF
-        #=======================================================================
-        #print variant
-        IDFobj = idf.IDF.fromIdfFile(variant['source'])
-
-        #print "OUTPUT: Zone Names"
-        for zoneName in idf.idfGetZoneNameList(IDFobj):
-            #print zoneName
-            pass
-
-
-        #=======================================================================
-        # Flags
-        #=======================================================================
-        for line in variant["flags"]:
-
-            if line["flag"] == "cleanOut":
-                keptDictName = line["argument"]
-                idf.cleanOutObject(IDFobj,idf.keptClassesDict[keptDictName])
-
-        #=======================================================================
-        # CLEAN OUT
-        #=======================================================================
-        #idf.cleanOutObject(IDFobj,idf.kept_classes_dict['onlyGeometry'])
-        #idf.applyDefaultConstNames(IDFobj, IDDobj)
-
-
-        for delete in variant["deletes"]:
-            idf.deleteClassesFromExcel(IDFobj, IDDobj, delete)
-
-
-        #=======================================================================
-        # APPLY TEMPLATES
-        #=======================================================================
-        for templateDef in variant["templates"]:
-            #print templateDef
-
-            with loggerCritical():
-                templatePath = idf.getTemplatePath(IDF_TEMPLATE_PATH,templateDef['templateName'])
-                templateIDF = idf.IDF.fromIdfFile(templatePath)
-            #thisTemplate = loadTemplates(IDF_TEMPLATE_PATH, templateDef['templateName']) # Get the template IDF
-
-            #logging.info("Working on template {}".format())
-            idf.applyTemplate(IDFobj,IDDobj,templateIDF,templateDef['zones'],templateDef['templateName'],templateDef['uniqueName'] ) # Apply it
-
-        #=======================================================================
-        # APPLY CHANGES
-        #=======================================================================
-        for change in variant["changes"]:
-            #pass
-            idf.applyChange(IDFobj, IDDobj, change)
-
-        #IDFobj = vrv.addZoneHVAC(IDFobj)
-        #idf.printXML(IDFobj.XML)
-        #vrv.addTerminals(IDFobj)
-        #vrv.getZoneHVAC(IDFobj)
-        #printXML(IDFobj.XML)
-
-        #newPathIdfOutput = getNewerFileRevName(pathIdfOutput)
-        fullInputPath= PATH_IDF_OUT + "\\" + varName + ".idf"
-        fullOutputPath = PATH_IDF_OUT + "\\" + varName
-        IDFobj.writeIdf(fullInputPath)
-        groupName = "00myGroup"
-        groupFilePath = PATH_IDF_OUT + r"\\" + groupName + ".epg"
-        csvout = csv.writer(open(groupFilePath, 'ab'))
-
-        thisRow = [fullInputPath,pathWeather,fullOutputPath,"1"]
-        csvout.writerow(thisRow)
-
-    #logging.info("Wrote the {0} variants to the group simulation file at: {1}".format(len(variantsList),groupFilePath))
-
-def idf_assembly_OLD(projectFile,weather_file_path,output_dir_path,groupName):
-    raise
-    """
-    A wrapper utility script to automate everything
-    """
-    
-    templatesList = IDF.loadTemplates(IDF_TEMPLATE_PATH)
-    raise
-    groupFilePath = output_dir_path + r"\\" + groupName + ".epg"
-    
-    #===============================================================================
-    # Load variants
-    #===============================================================================
-    variantFileAbsPath = os.path.abspath(projectFile)
-    outputTargetAbsDir = os.path.normpath(output_dir_path)
-    variantsList = IDF.loadVariants(inputExcelPath=variantFileAbsPath,
-                             targetAbsDirStem=outputTargetAbsDir,
-                             )
-    
-    
-    
-    
-    for variant in variantsList:
+    #--- Iterate variant_def definitions
+    for key in variants:
         
-        #===========================================================================
-        # Create a new IDF from the variant
-        #===========================================================================
-       
-        thisIDF = IDF(
-            pathIdfInput=variant.sourceFileAbsPath, 
-            XML=None, 
-            IDFstring = None, 
-            IDstring = None, 
-            description = None, 
-            pathIdfOutput = variant.targetDirAbsPath
-            )
-        
-        # Call the load        
-        thisIDF.loadIDF()
-        # Call convert
-        thisIDF.parseIDFtoXML()
-        #thisIDF.cleanOutObject()
-        thisIDF.cleanOutObject(kept_classes_dict['onlyGeometry'])
-        
-        thisIDF.applyDefaultConstructions()
-        
-        # Apply unique templates
-        for template in variant.templateDescriptions:
-            thisIDF.applyTemplateNewStyle(template,templatesList)
-            
-        # Apply changes
-        if variant.changesList:
-            for change in variant.changesList:
-                thisIDF.selectCommentedAttrInNamedObjectAndChange(change)
+        variant_def = variants[key]
+        #pprint(variant_def)
+        print()
+        logging.debug("Processing variant {} {}".format(variant_def['description'],variant_def['source']))
+        #pprint(variant_def)
 
-        thisIDF.convertXMLtoIDF()
         
-        thisIDF.writeIdf(thisIDF.pathIdfOutput)
-    
-    #===============================================================================
-    # Write the group file
-    #===============================================================================
+        #--- Create a new IDF from the variant_def
+        this_IDF = IDF.from_IDF_file(variant_def['source'])
         
-    csvout = csv.writer(open(groupFilePath, 'wb'))
-    
-    for variant in variantsList:
-        thisRow = [variant.targetDirAbsPath,weather_file_path,variant.targetDirAbsPath,"1"]
-        csvout.writerow(thisRow)
+        zones = util_xml.get_zone_name_list(this_IDF, zoneName='.')
+        for i,z in enumerate(zones):
+            print(i,z)
         
-    logging.info("Wrote the {0} variants to the group simulation file at: {1}".format(len(variantsList),groupFilePath))     
- 
-
 
 def process_project():
     #===========================================================================
@@ -552,7 +389,6 @@ def process_project():
     variants = load_variants(excel_project_dir,proj['idf_base'])
     
     #--- Load IDD
-    
     IDD_xml = IDF.from_XML_file(IDD_XML_FILE_PATH)
     #IDD_xml = IDF.from_IDD_file(IDD_FILE_PATH)
     
@@ -567,7 +403,6 @@ def process_project():
     copy_file(proj['path_weather_file'], proj['weather_file_path'])
     write_group_files(variants,proj)
     
-    
 
 if __name__ == "__main__":
     print(ABSOLUTE_LOGGING_PATH)
@@ -578,7 +413,7 @@ if __name__ == "__main__":
     
     logging.info("Started IDF test script")
     
-    process_project()
-
+    #process_project()
+    rename_zones()
     logging.info("Finished IDF test script")                
     

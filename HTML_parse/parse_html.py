@@ -581,7 +581,7 @@ def get_one_table(tree, section_name,table_name):
     # First, go to this html node and get all the rows and data from the table
     this_table = expand_table_node(tree[section_name][table_name])
 
-    logging.debug("Returning {} - {}; {}".format(section_name,table_name,this_table))
+    logging.debug("Returning {} - {}, {} rows, {} cols".format(section_name,table_name, len(this_table),len(this_table[0])))
 
     return this_table
 
@@ -600,7 +600,8 @@ def get_zone_summary_tables(inputDir):
     # Loop over files
     df_dict = dict()
     for path_file in htmlFilePaths:
-
+        logging.debug("Processing {}".format(path_file))
+        
         #print(path_file)
         split_path = util_paths.split_up_path(path_file)
         extension = split_path.pop()
@@ -611,26 +612,22 @@ def get_zone_summary_tables(inputDir):
         name = re.sub(r'0', r'', name)
         
         out_file_name = name + "Zone Summary dataframe.pck"
-
+        
         out_file_path_pck = inputDir + "\\" + out_file_name
         out_file_path_xlsx = inputDir + "\\Zone summaries.xlsx"
-
-        logging.debug("Processing {}".format(path_file))
-
+        
         # The tree is a dict of dicts, by [section_name][table_name] = NODE ELEMENT
         tree = parse_file(path_file)
 
         section_name = 'Input Verification and Results Summary'
         table_name = 'Zone Summary'
 
-        logging.debug("Getting table {} - {}".format(section_name,table_name))
-
         this_table = get_one_table(tree, section_name,table_name)
 
         headers = this_table.pop(0)
         headers = headers[1:]
         zone_names = [row.pop(0) for row in this_table]
-
+        
         #=======================================================================
         # Get frame
         #=======================================================================
@@ -656,25 +653,25 @@ def get_zone_summary_tables(inputDir):
         #=======================================================================
         # Save to pck
         #=======================================================================
-        new_frame.to_pickle(out_file_path_pck)
-        df_dict[name] = new_frame
+        #new_frame.to_pickle(out_file_path_pck)
+        #df_dict[name] = new_frame
 
         #=======================================================================
         # Save to mat
         #=======================================================================
 
-        out_file_name = name + "Zone Summary dataframe.mat"
+        #out_file_name = name + "Zone Summary dataframe.mat"
 
-        out_file_path_mat = inputDir + "\\" + out_file_name
-        xrg2.write_matlab_frame(new_frame,out_file_path_mat,name = name)
-
-        logging.debug("Saved zone summary information to {}".format(out_file_path_pck))
+        #out_file_path_mat = inputDir + "\\" + out_file_name
+        #xrg2.write_matlab_frame(new_frame,out_file_path_mat,name = name)
+        
+        #logging.debug("Saved zone summary information to {}".format(out_file_path_pck))
 
     #===========================================================================
     # Save to xlsx
     #===========================================================================
-    xrg2.write_dict_to_excel(df_dict, out_file_path_xlsx)
-    logging.debug("Retrieved {} zone summary table into dataframes in {}".format(len(df_dict),inputDir))
+    #xrg2.write_dict_to_excel(df_dict, out_file_path_xlsx)
+    #logging.debug("Retrieved {} zone summary table into dataframes in {}".format(len(df_dict),inputDir))
 
 def augment_data_tables(extracted_tables,tree):
 
@@ -704,7 +701,7 @@ def validate_tables(extracted_tables):
             continue
         assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
 
-def run_project(inputDir,loc_post_excel):
+def parse_html_to_excel(inputDir,loc_post_excel):
     """Main script
     #
 
@@ -816,7 +813,7 @@ def run_project(inputDir,loc_post_excel):
     
     logging.debug("Wrote df size {} to {}".format(df.shape,xlsFullPath))
 
-    raise
+    #raise
 
 def extract_tables(tree):
     """This function iterates over all table definitions i.e.:
@@ -925,8 +922,8 @@ def parse_file(thisTableFileName,flg_verbose = False):
         # This section is finished
         sectionDict[sectionNameText] = tables
         numTables = numTables + len(tables)
-
-    logging.info("Loaded {} tables from {} sections".format(numTables,len(sectionDict)))
+        
+    logging.info("Parsed {} tables from {} sections to dictionary".format(numTables,len(sectionDict)))
 
     return sectionDict
 
@@ -942,7 +939,7 @@ def run_projectGUI():
 
 
     app = wx.App(False)
-    frame = runDirectory(HTMLdataDir, run_project)
+    frame = runDirectory(HTMLdataDir, parse_html_to_excel)
     frame.Show()
     app.MainLoop()
 
@@ -994,8 +991,8 @@ if __name__ == "__main__":
 
         #raise
         #run_projectGUI()
-        #run_project(HTMLdataDir)
+        #parse_html_to_excel(HTMLdataDir)
 
-    run_project(HTMLdataDir)
+    parse_html_to_excel(HTMLdataDir)
 
     logging.debug("Finished _main".format())

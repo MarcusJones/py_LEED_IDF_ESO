@@ -20,7 +20,7 @@ from config.config import *
 
 #--- SETUP Standard modules
 import re
-import os
+#import os
 
 #--- SETUP 3rd party modules
 import pandas as pd
@@ -54,19 +54,20 @@ def parseSummary():
         #loc_post_excel = os.path.dirname(os.path.realpath(__file__)) + r"\..\ExcelTemplates\LEED PostProcess r23.xlsx"
         #loc_post_excel = os.path.abspath( loc_post_excel )
         
-        p_html.run_project(project_dir,POST_PROC_EXCEL_FILE)
+        p_html.parse_html_to_excel(project_dir,POST_PROC_EXCEL_FILE)
         
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         
-    if 1:
+    if 0:
         #===========================================================================
         # Parse the html files to get zone summary pck
         #===========================================================================
-        p_html.get_zone_summary_tables(project_dir)
-
+        z_tables = p_html.get_zone_summary_tables(project_dir)
+        print(z_tables)
+        raise
         logging.debug("Finished with zone summary tables in {}".format(project_dir))
 
-    if 1:
+    if 0:
         #===========================================================================
         # Parse the proposed and 1 baseline eso file
         #===========================================================================
@@ -84,7 +85,7 @@ def parseSummary():
     #===========================================================================
     # Reload the pck files into an analysis set
     #===========================================================================
-    if 1:
+    if 0:
         pck_files=util_paths.get_files_by_name_ext(project_dir, '.', 'pck')
 
         analysis_set = dict()

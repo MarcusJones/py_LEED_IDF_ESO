@@ -413,7 +413,7 @@ if __name__ == "__main__":
     
     logging.info("Started IDF test script")
     
-    #process_project()
-    rename_zones()
+    process_project()
+    #rename_zones()
     logging.info("Finished IDF test script")                
     

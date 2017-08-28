@@ -4,42 +4,55 @@
 # 00 - 2012FEB05 - First commit
 # 01 - 2012MAR17 - Update to ...
 #===============================================================================
+from anaconda_navigator.utils.py3compat import iteritems
 
 """This module does A and B.
 Etc.
 """
 
 #===============================================================================
-# Set up
+#--- SETUP Config
 #===============================================================================
-# Standard:
-from __future__ import division
-from __future__ import print_function
+from config.config import *
 
-from config import *
-
+#===============================================================================
+#--- SETUP Logging
+#===============================================================================
 import logging.config
 import unittest
 
-from utility_inspect import get_self, get_parent, list_object
-from utility_path import get_current_file_dir
+#===============================================================================
+#--- SETUP Standard modules
+#===============================================================================
 import re
-#import exergyframes.exergy_frame2 as xrg2
-
-from collections import defaultdict
-from numpy import genfromtxt
-
 import datetime
-import pandas as pd
 import time
+import os
+
+#from collections import defaultdict
+#from numpy import genfromtxt
+
+#===============================================================================
+#--- SETUP 3rd party
+#===============================================================================
+import pandas as pd
 pd.set_option('display.width', 500)
 
-from UtilityParse import parserCursor
+#===============================================================================
+#--- SETUP Utilities
+#===============================================================================
+from ExergyUtilities.utility_inspect import get_self #, get_parent, list_object
+from ExergyUtilities.utility_path import get_current_file_dir
+import ExergyUtilities.utility_path as util_paths
+import ExergyUtilities.util_pandas as util_pandas
+#from UtilityParse import parserCursor
 
+#===============================================================================
+#--- SETUP Custom modules
+#===============================================================================
 #from exergyframes import exergy_frame as xrg
-import exergyframes.exergy_frame2 as xrg
-
-import utility_path as util_paths
+#import exergyframes.exergy_frame2 as xrg2
+#import exergyframes.exergy_frame2 as xrg
 
 FLG_PRINTLINES = True
 FLG_PRINTLINES = False
@@ -49,10 +62,10 @@ FLG_PRINTLINES = False
 # Code
 #===============================================================================
 def place_holder(line):
-   #print "Token function: {} lines ".format(len(blockLines))
-   #print blockLines
-   #lineIndex = lineIndex + 1
-   print(line)
+    #print "Token function: {} lines ".format(len(blockLines))
+    #print blockLines
+    #lineIndex = lineIndex + 1
+    print(line)
 
 
 
@@ -236,111 +249,6 @@ def get_headers(header_lines):
     logging.debug("Returned {} variable definition rows in data frame".format(len(df)))
     return df
 
-def parse_timestepOLD(lines):
-
-    #===========================================================================
-    # The first line holds the timestamp
-    #===========================================================================
-    # Looks like this;
-    #2,    6,      Day of Simulation[],    Month[], Day of Month[],DST Indicator[1=yes 0=no],Hour[],StartMinute[],EndMinute[],DayType
-    #2,            1,                      12,      21,            0,                        1,     0.00,         60.00,      WinterDesignDay
-
-    # Get it
-    first_line = lines.pop(0)
-    first_line = re.split(",",first_line)
-
-    # Break it down
-    id = first_line.pop(0)
-    year = 2014
-    day_of_simulation = int(first_line.pop(0))
-    month = int(first_line.pop(0))
-    day = int(first_line.pop(0))
-    dst = int(first_line.pop(0))
-    hour = int(first_line.pop(0))
-    start_minute = int(float(first_line.pop(0)))
-    end_minute = int(float(first_line.pop(0)))
-    time_step = end_minute - start_minute
-    day_type=first_line.pop(0)
-
-    timestamp = datetime.datetime(year, month, day, hour-1,start_minute)
-
-    #===========================================================================
-    # Process the values
-    #===========================================================================
-    # Break the lines down
-    values = list()
-    for line in lines:
-        split_line = re.split(",",line)
-        var_id = int(split_line.pop(0))
-
-        value = split_line
-        if len(split_line) == 1:
-            try:
-                value = float(value[0])
-            except:
-                print(value)
-                raise
-        elif len(split_line) > 1:
-            pass
-        # A dictionary containing the id and the value as pairs
-        values.append((var_id, value))
-
-
-    table_row = dict((('Timestamp',timestamp), ('step', time_step), ('Day type',day_type)))
-    table_row = {'Timestamp':timestamp}
-    table_row.update(dict(values))
-    #logging.debug("TIMESTEP {}".format(table_row))
-    return table_row
-
-def parse_environmentOLD(lines,line_index,hourly_indices):
-    this_line = lines[line_index]
-    split_line = re.split(",",this_line)
-    id = split_line.pop(0)
-    location = split_line.pop(0)
-    logging.debug("Found environment {}".format(location))
-
-    #environ_table = defaultdict(list)
-    time_rows = list()
-    line_index += 1
-
-    flg_end_environment = False
-    while not flg_end_environment:
-        this_line = lines[line_index]
-        split_line = re.split(",",this_line)
-        #logging.debug("{}".format(split_line))
-        if split_line[0] == "1":
-            id = split_line.pop(0)
-            location = split_line.pop(0)
-            logging.debug("Found next environment, break".format())
-            flg_end_environment = True
-            line_index -= 1
-
-        elif re.compile(r"^ Number of Records Written=").match(this_line):
-            logging.debug("Found EOF, break".format())
-            flg_end_environment = True
-            line_index -= 1
-
-        elif re.compile(r"^End of Data").match(this_line):
-            flg_end_environment = True
-            logging.debug("Found EOF, break".format())
-            line_index -= 1
-
-        elif split_line[0] == "2":
-            # Timestep
-            line_index, table_row = parse_timestepOLD(lines, line_index,hourly_indices)
-            time_rows.append(table_row)
-            continue
-        else:
-            print(this_line)
-            raise
-        line_index += 1
-
-    df = pd.DataFrame.from_records(time_rows, index='Timestamp')
-    #print(df.head())
-
-    return line_index - 1,  (location, df)
-
-
 def get_hourly_data(lines,hourly_indices):
     line_count = 0
     #lines = eso_file.readlines()
@@ -420,26 +328,6 @@ def get_biggest_frame(frames):
             biggest = frame
     return frame
 
-
-def old():
-
-    #=======================================================================
-    # Get the hourly values only
-    #=======================================================================
-    mask_hourly = (definition_frame.loc["Timestep",:]  == "Hourly")
-    df_hourly = definition_frame
-
-    annual_hourly = xrg.ExergyFrame(annual_frame.data_frame.loc[:,mask_hourly],
-                                    annual_frame.header_frame.loc[:,mask_hourly],
-                                    'Main',)
-
-    annual_hourly = annual_hourly.return_multi_index()
-    print(annual_hourly)
-
-    path = r'D:\Projects\Temp\testing.xlsx'
-
-
-
 def save_frames(list_frames):
     for frame in list_frames:
         xrg.write_excel_one(annual_hourly, path)
@@ -476,7 +364,7 @@ def parse_tstep(tstep_def, eso_file):
 
     #print(day,hour)
 
-    line = eso_file.next()
+    line = eso_file.readline()
     this_tstep_ids = list()
     this_tstep_vals = list()
 
@@ -520,7 +408,7 @@ def parse_tstep(tstep_def, eso_file):
         #print(items, end='')
         assert(len(items)==0), "{}".format(items)
 
-        line = eso_file.next()
+        line = eso_file.readline()
 
     #logging.debug("Parsing timestep: {}".format(timestamp))
     assert(len(this_tstep_ids) == len(this_tstep_vals))
@@ -541,7 +429,7 @@ def parse_env(env_defition, eso_file):
     t0 = time.time()
 
 
-    line = eso_file.next()
+    line = eso_file.readline()
     tstep_data_list = list()
 
     #max_lines = 1000
@@ -581,7 +469,7 @@ def parse_env(env_defition, eso_file):
         else:
             pass
         
-        line = eso_file.next()
+        line = eso_file.readline()
 
     #===========================================================================
     # Create the dataframe
@@ -611,7 +499,7 @@ def process_vardefs(variable_defs):
     for vdef in variable_defs:
         names = list()
         this_val_list = list()
-        for k,v in vdef.iteritems():
+        for k,v in vdef.items():
             names.append(k)
             this_val_list.append(v)
 
@@ -629,8 +517,15 @@ def process_vardefs(variable_defs):
 
     # Transpose
     val_list_T = zip(*val_list)
+    val_list_T = list(val_list_T)
     # Reorder
-    val_list_ordered_T = [val_list_T[idx] for idx in new_order]
+
+    try:
+        val_list_ordered_T = [val_list_T[idx] for idx in new_order]
+    except:
+        print(val_list_T)
+        print(new_order)
+        raise        
     val_list_ordered = zip(*val_list_ordered_T)
 
     #index_frame = pd.DataFrame(data = val_list_ordered,columns = names_ordered)
@@ -649,31 +544,31 @@ def process_vardefs(variable_defs):
     return variable_definitions, column_labels
 
 
-def parse2(path_eso, dir_out):
-
-    """Return the something to the something."""
+def parse2(path_eso):
+    """Return df dict"""
     logging.debug("Parsing {}".format(path_eso))
-    #---http://code.ohloh.net/file?fid=DEXGA78swpM6h-Wfg-o0Gquk3fw&cid=Prb6amLFRs4&s=&fp=95353&mp&projSelected=true#L0
+    #http://code.ohloh.net/file?fid=DEXGA78swpM6h-Wfg-o0Gquk3fw&cid=Prb6amLFRs4&s=&fp=95353&mp&projSelected=true#L0
 
     df_dict = dict()
 
     with open(path_eso, 'r') as eso_file:
-
-        #pth_output = r"d:\parsed.txt"
-        #file_output = open(pth_output, 'w')
-
         logging.debug("Opened {}".format(eso_file))
-        #lines = eso_file.readlines()
 
+        #--- Main counter
         cnt = 0
-        flg_head = True
-        # Get first line
-        flg_end = False
-        line = eso_file.next()
         variable_defs = list()
         column_labels = None
         df = None
         max_lines = 10000
+                
+        #--- Set state flags
+        flg_head = True # Start in head
+        flg_end = False
+        
+        #--- Get first line
+        line = eso_file.readline()
+        
+        #--- Main loop
         while not flg_end and cnt <= max_lines:
             #print(line)
             if cnt == 3000:
@@ -681,11 +576,12 @@ def parse2(path_eso, dir_out):
                 pass
             label = 'NONE'
 
-
             #===================================================================
-            # A data entry
+            #--- A data entry
             #===================================================================
             if not flg_head:
+                logging.debug("Main Loop {}: Data entry".format(cnt, len(variable_defs)))
+                
                 original_line = line
                 items = line.strip()
                 items = line.split(',')
@@ -728,150 +624,61 @@ def parse2(path_eso, dir_out):
                 else:
                     print("Line {} - {}".format(cnt,original_line))
                     raise Exception("A data entry with no environment is not possible".format())
+            
             #===============================================================
-            # The first list is skipped
+            #--- The first list is skipped
             #===============================================================
             if flg_head and re.match(token_header, line):
+                logging.debug("Main Loop {}: Skip 1st list".format(cnt,len(variable_defs)))
                 pass
-                #label = "Header"
 
             #===================================================================
-            # Done with variable definitions
+            #--- Done with variable definitions
             #===================================================================
             elif flg_head and re.match(token_endhead, line):
                 label = "End header"
-                logging.debug("{} different variable definitions loaded".format(len(variable_defs)))
+                logging.debug("Main Loop {}: {} different variable definitions loaded".format(cnt,len(variable_defs)))
                 variable_defs,column_labels = process_vardefs(variable_defs)
 
                 flg_head = False
 
             #===================================================================
-            # A variable definition
+            #--- A variable definition
             #===================================================================
             else:
-                variable_defs.append(parse_vardef(line))
+                var = parse_vardef(line)
+                logging.debug("Main Loop {}: Found a Variable Definition, {}".format(cnt,var))
+                variable_defs.append(var)
 
-                #label = "Var def"
-                #items = line.strip()
-                #items = line.split(',')
-
-
-            #print("{:<5} - {:<10} - {:20}".format(cnt,label,line), end = '', file = file_output)
-
+            #===================================================================
+            #--- End of ESO, break
+            #===================================================================
             if re.match(token_enddata, line):
                 logging.debug("End of Data found while in main loop".format())
                 break
-
-            line = eso_file.next()
+            
+            line = eso_file.readline()
 
             cnt += 1
-
+            
+        #===================================================================
+        #--- End main loop
+        #===================================================================
         logging.debug("{} frames found".format(len(df_dict)))
+        return df_dict
+    
+def NEW_save_dfs(df_dict):    
+    for name,df in df_dict.items():
+        original_name = util_paths.split_up_path(path_eso)[-2]
+        original_name = original_name.replace('-','')
 
-        for name,df in df_dict.iteritems():
-            original_name = util_paths.split_up_path(path_eso)[-2]
-            original_name = original_name.replace('-','')
+        path_out = dir_out + name + ".pck"
+        #df.to_pickle(path_out)
+        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
 
-            path_out = dir_out + name + ".pck"
-            df.to_pickle(path_out)
-            logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
-
-            path_out = dir_out + name + '.mat'
-            xrg2.write_matlab_tseries(df,path_out,original_name)
-            logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
-
-
-def parse(path_eso):
-    """Return the something to the something."""
-    logging.debug("Parsing {}".format(path_eso))
-
-    with open(path_eso, 'r') as eso_file:
-        logging.debug("Opened {}".format(eso_file))
-        lines = eso_file.readlines()
-
-
-    #=======================================================================
-    # Break off  variable definitions
-    #=======================================================================
-    mainLoop = parserCursor(lines,PRIMARY_TOKENS, COMMENT_TOKENS)
-    blocks = list()
-    for block in mainLoop:
-        blocks.append(block['lines'])
-        logging.debug("Processed {} blocks".format(len(blocks)))
-
-
-    definition_lines = blocks.pop(0)
-    logging.debug("{} definition lines".format(len(definition_lines)))
-
-
-    # Definitions are in a dataframe
-    definition_frame = get_headers(definition_lines)
-    #print(definition_frame)
-
-    #=======================================================================
-    # The data left over
-    #=======================================================================
-    data = blocks.pop(0)
-    data = data[1:-1] # Skip the first line
-    logging.debug("{} data lines".format(len(data)))
-
-
-
-    #=======================================================================
-    # Get the environments
-    #=======================================================================
-    logging.debug("Parsing environments".format(len(definition_lines)))
-    data_loop = parserCursor(data,ENVIRONMENT_TOKENS, COMMENT_TOKENS)
-    environments =list()
-    for block in data_loop:
-        environments.append(block['lines'])
-    logging.debug("{} environments".format(len(environments)))
-
-    #=======================================================================
-    # Get time step blocks in each environment
-    #=======================================================================
-    logging.debug("Parsing environments".format(len(definition_lines)))
-    expanded_environments = list()
-    for env in environments:
-        logging.debug("Processing environment {} , {} lines".format(env[0].strip(),len(env)))
-        this_environment = env[0].strip()
-        time_loop = parserCursor(env,TIMESTEP_TOKENS, COMMENT_TOKENS)
-        timesteps = list()
-        for block in time_loop:
-            #print(block['function'])
-            #print(len(block['lines']))
-            #environments.append(block['lines'])
-            timesteps.append(block['lines'])
-
-        logging.debug("Found {} time steps in {} ".format(len(timesteps),env[0].strip()))
-
-        env_dict = {'name':this_environment, 'tsteps':timesteps}
-
-        expanded_environments.append(env_dict)
-
-    #=======================================================================
-    # Process timesteps, create xframes
-    #=======================================================================
-    frames = list()
-    for env in expanded_environments:
-        logging.debug("Getting all data from {}".format(env['name']))
-        rows = list()
-        # Step over all timesteps
-
-        for tstep in env['tsteps']:
-            this_row = parse_timestepOLD(tstep)
-            rows.append(this_row)
-
-        df = pd.DataFrame.from_records(rows,index = "Timestamp")
-        logging.debug("Returned {} rows in data frame".format(len(df)))
-
-        df,definition_frame = xrg.drop_missing_cols(df,definition_frame)
-        this_xframe = xrg.ExergyFrame(df,definition_frame,env['name'],)
-        frames.append(this_xframe)
-
-    logging.debug("{} xframes created".format(len(frames)))
-    return frames
-
+        path_out = dir_out + name + '.mat'
+        #xrg2.write_matlab_tseries(df,path_out,original_name)
+        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
 
 
 def load_save(path_input, path_output):
@@ -976,10 +783,11 @@ def analyze_results(frame,path_out):
 
 
 def LEED_eso_parse_df(root_dir):
+    raise
     files = [{'in': root_dir+r'\Proposed.eso',       'out': root_dir+r'\\Proposed.pck'},
              {'in': root_dir+r'\Baseline-G000.eso',  'out': root_dir+r'\\Baseline.pck'},
              ]
-
+    
     for file_def in files:
         load_save(file_def['in'], file_def['out'])
 
@@ -996,23 +804,75 @@ class allTests(unittest.TestCase):
         #         self.path_eso = path_eso
         #
         #         self.path_output = r'D:\Projects\IDFout'
-        root_dir = get_current_file_dir(__file__)
-        root_dir = root_dir + r"\..\..\SampleESO\LEED hotel run 7 days"
-        root_dir = os.path.abspath(root_dir)
-        self.root_dir = root_dir
-        print(self.root_dir)
-        self.pth_big_eso = r"D:\Projects\Proposed.eso"
+        self.root_dir = get_current_file_dir(__file__)
+        self.root_dir = self.root_dir + r"\..\SampleESO"
+        self.root_dir = os.path.abspath(self.root_dir)
+        logging.debug("Root dir: {}".format(self.root_dir))
+        
+        self.test_dir = r"C:\testdir_eso_out"
+        #self.pth_big_eso = r"D:\Projects\Proposed.eso"
 
     @unittest.skipIf(0,'')
-    def test010_parse1(self):
-
+    def test010_get_frames(self):
         print("**** TEST {} ****".format(get_self()))
-        root_dir = self.root_dir
-        pth_eso = os.path.join(root_dir,'Proposed.eso')
-        pth_eso = self.pth_big_eso
+        print("Given a test file")
+        print("Parse the eso into the df_dict object")
+        print("\t each environment as a separate dictionary entry")
+        
+        # Directories
+        #root_dir = self.root_dir
+        #pth_eso = os.path_excel.join(root_dir,'Proposed.eso')
+        #pth_eso = self.pth_big_eso
+        dir_out = os.path.join(self.root_dir,'output')
+        path_file = os.path.join(self.root_dir,"1ZoneUncontrolled.eso") 
+         
+        logging.debug("Input: {}".format(self.root_dir))
+        logging.debug("Output: {}".format(dir_out))
+        
+        df_dict = parse2(path_file)
+        keys = list(df_dict.keys())
+        # Change key names (shorten)
+        for key in keys:
+            #print("Dateframe: {}".format(key))
+            new_key = key[0:29]
+            # Shorten the name
+            df_dict[new_key] = df_dict[key]
+            del df_dict[key]
+            #print(df_dict[key])
+        
+        for key in df_dict:
+            print()
+            print("***DATAFRAME***")
+            print(key, df_dict[key].shape)
+            #print(df_dict[key].describe())
+            print()
+        
+        path_excel = os.path.join(self.test_dir,'testout.xlsx')
 
-        print(pth_eso)
-        parse2(pth_eso)
+        util_pandas.write_dict_to_excel(df_dict,path_excel)
+        
+        logging.debug("Finished writing to {}".format(path_excel))
+        
+        path_matlab = os.path.join(self.test_dir,'testout_tseries.mat')
+        
+        for i,key in enumerate(df_dict):
+            # name = "name{}.mat".format(chr(i))
+            name = 'a'
+            df = df_dict[key]
+            util_pandas.write_matlab_tseries(df,path_matlab,name)
+        
+        path_matlab = os.path.join(self.test_dir,'testout_regular.mat')
+
+        for i,key in enumerate(df_dict):
+            #name = "name{}.mat".format(chr(i))
+            #name = key[0:3]
+            name = 'a'
+            df = df_dict[key]
+            util_pandas.write_matlab_frame(df,path_matlab,name)
+           
+        
+        
+        #self.test_dir
 
         #LEED_eso_parse_df(root_dir)
 

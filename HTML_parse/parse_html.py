@@ -595,26 +595,29 @@ def get_zone_summary_tables(inputDir):
     comparison_frame = None
     assert(len(htmlFilePaths) != 0), "No html files found"
 
-    tables_list = list()
+    tables_dict = dict()
 
     # Loop over files
     df_dict = dict()
     for path_file in htmlFilePaths:
-        logging.debug("Processing {}".format(path_file))
         
         #print(path_file)
         split_path = util_paths.split_up_path(path_file)
         extension = split_path.pop()
         name = split_path.pop()
         
-        name = re.sub(r'-', r'', name)
-        name = re.sub(r'G000', r'', name)
-        name = re.sub(r'0', r'', name)
+        #name = re.sub(r'-', r'', name)
+        #name = re.sub(r'G000', r'', name)
+        #name = re.sub(r'0', r'', name)
+        name = re.sub(r'Table', r'', name)
         
-        out_file_name = name + "Zone Summary dataframe.pck"
+        logging.debug("Processing {} at {}".format(name,path_file,))
+
         
-        out_file_path_pck = inputDir + "\\" + out_file_name
-        out_file_path_xlsx = inputDir + "\\Zone summaries.xlsx"
+        #out_file_name = name + "Zone Summary dataframe.pck"
+        
+        #out_file_path_pck = inputDir + "\\" + out_file_name
+        #out_file_path_xlsx = inputDir + "\\Zone summaries.xlsx"
         
         # The tree is a dict of dicts, by [section_name][table_name] = NODE ELEMENT
         tree = parse_file(path_file)
@@ -647,9 +650,12 @@ def get_zone_summary_tables(inputDir):
         this_frame['Conditioned (Y/N)'].replace(yn,inplace=True)
         this_frame['Part of Total Floor Area (Y/N)'].replace(yn,inplace=True)
         new_frame = this_frame.convert_objects(convert_numeric=True)
+        
+        tables_dict[name] = new_frame
 
         logging.debug("Zone summary dataframe over {} zones".format(len(new_frame.index)))
-
+        
+        
         #=======================================================================
         # Save to pck
         #=======================================================================
@@ -671,7 +677,9 @@ def get_zone_summary_tables(inputDir):
     # Save to xlsx
     #===========================================================================
     #xrg2.write_dict_to_excel(df_dict, out_file_path_xlsx)
-    #logging.debug("Retrieved {} zone summary table into dataframes in {}".format(len(df_dict),inputDir))
+    logging.debug("Retrieved {} zone summary table into dataframes in {}".format(len(df_dict),inputDir))
+    return tables_dict
+
 
 def augment_data_tables(extracted_tables,tree):
 

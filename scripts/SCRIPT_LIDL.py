@@ -30,7 +30,7 @@ from pprint import pprint
 #from utility_inspect import get_self
 #import utilities_idf as util_idf
 from idf.idf_parser import IDF as IDF 
-import idf.utilities_xml as util_xml
+import idf.utilities_idf_xml as util_xml
 from idf.kept_classes import kept_classes_dict
 #from utility_print_table import PrettyTable,printTable
 from ExergyUtilities.utility_logger import LoggerCritical, LoggerDebug
@@ -233,7 +233,7 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
         variant_def = variants[key]
         #pprint(variant_def)
         print()
-        logging.debug("Processing variant {} {}".format(variant_def['description'],variant_def['source']))
+        logging.debug("* Processing variant {} {}".format(variant_def['description'],variant_def['source']))
         #pprint(variant_def)
 
         
@@ -308,6 +308,8 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
         variants[key].pop('flags')
         variants[key].pop('templates')
         
+        logging.debug("* Finished with variant {}".format(variant_def['description']))
+
         #print(out_path)
         #raise
         #this_IDF.write_IDF(out_path)
@@ -336,13 +338,13 @@ def write_group_files(variants,proj_def):
     #raise
     for key in variants:
         variant_def = variants[key]
-        pprint(variant_def)
+        #pprint(variant_def)
         variant_def['IDF_obj'].write_IDF(variant_def['out_path'])
         thisRow = [variant_def['out_path'],proj_def['weather_file_path'],variant_def['out_path'],"1"]
         csvout.writerow(thisRow)
         
     logging.info("Wrote the {0} variants to the group simulation file at: {1}".format(len(variants),groupFilePath))     
- 
+
 
 def rename_zones():
     raise Exception("This function is unfinished")

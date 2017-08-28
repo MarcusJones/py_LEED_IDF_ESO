@@ -20,7 +20,7 @@ from config.config import *
 
 #--- SETUP Standard modules
 import re
-#import os
+import os
 
 #--- SETUP 3rd party modules
 import pandas as pd
@@ -29,10 +29,11 @@ pd.set_option('display.width', 500)
 #--- SETUP Custom modules
 #from idf_parser import IDF as IDF 
 import ExergyUtilities.utility_path as util_paths
+import ExergyUtilities.util_pandas as util_pandas
 #from html_summary.parse_html import run_project,get_zone_summary_tables
 import HTML_parse.parse_html as p_html
-#import parse_eso2 as p_eso
-
+import ESO_parse.parse_eso2 as p_eso
+#import exergy_frame.utilities_base as util_base
 
 #import html_summary.ParseHTMLTables as htPr
 #===============================================================================
@@ -47,7 +48,7 @@ def parseSummary():
 
     if 1:
         #===========================================================================
-        # Parse HTML LEED files into one excel file
+        #--- HTML files into one excel file
         #===========================================================================
         #loc_post_excel = r"C:\EclipseWorkspace\PyIDF\ExcelTemplates\LEED PostProcess r21.xlsx"
         
@@ -58,18 +59,28 @@ def parseSummary():
         
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         
-    if 0:
+    if 1:
         #===========================================================================
-        # Parse the html files to get zone summary pck
+        #--- Zone Summary HTML files to excel file
         #===========================================================================
         z_tables = p_html.get_zone_summary_tables(project_dir)
-        print(z_tables)
-        raise
+        #print(z_tables[0])
+        #for key in z_tables:
+        #    print(key)
+        #    print(z_tables[key])
+        #    print(project_dir)
+        #raise
+        
+        df_dict = z_tables
+        path = os.path.join(project_dir,'00zoneSummary.xlsx')
+        #print(path)
+        #raise
+        util_pandas.write_dict_to_excel(df_dict,path )
         logging.debug("Finished with zone summary tables in {}".format(project_dir))
 
     if 0:
         #===========================================================================
-        # Parse the proposed and 1 baseline eso file
+        #--- ESO Parsing
         #===========================================================================
         files = [
              {'in': project_dir+r'\Proposed.eso',       'out': project_dir+r'\\Proposed '},

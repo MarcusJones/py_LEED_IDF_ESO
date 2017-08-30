@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     myLogger = logging.getLogger()
     myLogger.setLevel("DEBUG")
-
+    
     logging.debug("Started _main".format())
     #raise
     parseSummary()

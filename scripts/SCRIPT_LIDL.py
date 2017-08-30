@@ -21,6 +21,8 @@ import os
 import re
 import csv
 from pprint import pprint
+from shutil import rmtree
+
 #from collections import defaultdict
 #from shutil import copyfile
 
@@ -224,7 +226,7 @@ def get_templates(templatePath, filter_regex_string = ".", flgExact = True):
 def idf_assembly(variants,templates,IDD_xml,proj_def):
     
     """
-    A wrapper utility script to automate everthing
+    A wrapper utility script to automate everything
     """
     
     #--- Iterate variant_def definitions
@@ -249,9 +251,17 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
             #print(flag_function,flag_argument)
             #--- Flag cleanOut found
             if flag_function == 'cleanOut':
+                
                 if 0:
                     class_count_table = util_xml.get_table_object_count(this_IDF)
                     print_table(class_count_table)
+                
+                logging.debug("Cleaning out, keeping classes: {}".format(flag_def['argument']))
+                #print("asdfasdf/n {}".format(kept_classes_dict[flag_argument]))
+                #print("WHOLE DICT")
+                #pprint(kept_classes_dict)
+                #print("SELECTED DICT is {}".format(flag_argument))
+                #pprint(kept_classes_dict[flag_argument])
                 
                 this_IDF = util_xml.clean_out_object(this_IDF, kept_classes_dict[flag_argument])
                 
@@ -382,7 +392,22 @@ def process_project():
     weatherFilePath = FREELANCE_DIR + r"\WEA\ARE_Abu.Dhabi.412170_IWEC.epw"
     outputDirPath = FREELANCE_DIR + r"\Simulation"
     groupName = "00myGroup"
-
+    
+    #--- Check to delete
+    input("Deleting all files in {}".format(proj['idf_output_dir']))
+    #try: rmtree(proj['idf_output_dir'])
+    #except: pass
+    #os.mkdir(proj['idf_output_dir'])
+    #folder = '/path/to/folder'
+    for the_file in os.listdir(proj['idf_output_dir']):
+        file_path = os.path.join(proj['idf_output_dir'], the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
+    #raise
     #--- Get templates from directory     
     templates = get_templates(IDF_TEMPLATE_PATH)
     

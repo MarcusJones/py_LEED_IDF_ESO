@@ -394,19 +394,21 @@ def process_project():
     groupName = "00myGroup"
     
     #--- Check to delete
-    input("Deleting all files in {}".format(proj['idf_output_dir']))
+    key_input = input("Deleting all files in {}".format(proj['idf_output_dir']))
     #try: rmtree(proj['idf_output_dir'])
     #except: pass
     #os.mkdir(proj['idf_output_dir'])
     #folder = '/path/to/folder'
-    for the_file in os.listdir(proj['idf_output_dir']):
-        file_path = os.path.join(proj['idf_output_dir'], the_file)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
-        except Exception as e:
-            print(e)
+    if key_input:
+        logging.debug("Deleting files from {}".format(proj['idf_output_dir']))
+        for the_file in os.listdir(proj['idf_output_dir']):
+            file_path = os.path.join(proj['idf_output_dir'], the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+            except Exception as e:
+                print(e)
     #raise
     #--- Get templates from directory     
     templates = get_templates(IDF_TEMPLATE_PATH)

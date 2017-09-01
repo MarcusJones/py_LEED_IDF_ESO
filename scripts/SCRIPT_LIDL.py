@@ -394,12 +394,12 @@ def process_project():
     groupName = "00myGroup"
     
     #--- Check to delete
-    key_input = input("Deleting all files in {}".format(proj['idf_output_dir']))
+    key_input = input("Deleting all files in {} PRESS ENTER for YES:".format(proj['idf_output_dir']))
     #try: rmtree(proj['idf_output_dir'])
     #except: pass
     #os.mkdir(proj['idf_output_dir'])
     #folder = '/path/to/folder'
-    if key_input:
+    if not key_input:
         logging.debug("Deleting files from {}".format(proj['idf_output_dir']))
         for the_file in os.listdir(proj['idf_output_dir']):
             file_path = os.path.join(proj['idf_output_dir'], the_file)

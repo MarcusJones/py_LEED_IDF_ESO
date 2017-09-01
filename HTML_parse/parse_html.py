@@ -24,6 +24,7 @@ from config.config import *
 #from collections import defaultdict
 import re
 import shutil
+from pprint import pprint
 
 
 #--- SETUP 3rd party modules
@@ -58,13 +59,13 @@ from ExergyUtilities.util_pretty_print import print_table
 
 
 TABLES =[
-         {'section'     :   'Annual Building Utility Performance Summary',  'table'       :   'Site and Source Energy'  },
-         {'section'      :  'Input Verification and Results Summary',                        'table'       :  'General'},
-         {'section'      :  'LEED Summary',                                                  'table'       :      'EAp2-4/5. Performance Rating Method Compliance'},
-         {'section'      :  'Annual Building Utility Performance Summary',                   'table'       :  'Building Area'                           },
-         {'section'      :  'Annual Building Utility Performance Summary',                   'table'       :  'End Uses'                                },
-         {'section'      :  'Annual Building Utility Performance Summary',                   'table'       :  'Comfort and Setpoint Not Met Summary'   },
-         {'section'      :                  'Input Verification and Results Summary',               'table'      :  'Window-Wall Ratio'                        },
+         {'section'     :   'Annual Building Utility Performance Summary',  'table' :   'Site and Source Energy'  },
+         {'section'      :  'Input Verification and Results Summary',       'table' :  'General'},
+         {'section'      :  'LEED Summary',                                 'table' :      'EAp2-4/5. Performance Rating Method Compliance'},
+         {'section'      :  'Annual Building Utility Performance Summary',  'table' :  'Building Area'                           },
+         {'section'      :  'Annual Building Utility Performance Summary',  'table' :  'End Uses'},
+         {'section'      :  'Annual Building Utility Performance Summary',  'table' :  'Comfort and Setpoint Not Met Summary'},
+         {'section'      :  'Input Verification and Results Summary',       'table' :  'Window-Wall Ratio'},
          #{'section'      :                  'Sensible Heat Gain Summary',               'table'         :  'Window-Wall Ratio'                        },
           ]
 
@@ -153,7 +154,66 @@ def convert_kWh_MWh(array):
     array = array / 3000
     return array
 
+
+#         {'section'      :  '',  'table' :  ''},
+
+
 #--- Get extra data items
+def get_end_use_subs(parseTree):
+    section_name = 'Annual Building Utility Performance Summary'
+    tableName = 'End Uses By Subcategory'
+    table = expand_table_node(parseTree[section_name][tableName])
+    #pprint(table)
+    new_table = list()
+    for row in table:
+        label = row.pop(0) + " " +  row.pop(0)
+        new_row = [label] + row
+        #row.append(row)
+        new_table.append(new_row)
+        
+    this_table = serialize_table(new_table)
+    # Add the section name
+    this_table = [[section_name+" End Uses"]+row for row in this_table]
+
+    # Create a key
+    this_table = [[" ".join(row[:-1])] + row for row in this_table]
+    #pprint(this_table)
+    
+    #print_table(this_table)
+    #extracted_tables = extracted_tables + this_table
+    
+    logging.debug("{} - {}".format(get_self(),len(this_table)))
+    
+    return this_table
+
+def get_end_use_sub_demand(parseTree):
+    section_name = 'Demand End Use Components Summary'
+    tableName = 'End Uses By Subcategory'
+    table = expand_table_node(parseTree[section_name][tableName])
+    #pprint(table)
+    new_table = list()
+    for row in table:
+        label = row.pop(0) + " " + row.pop(0)
+        new_row = [label] + row
+        #row.append(row)
+        new_table.append(new_row)
+        
+    this_table = serialize_table(new_table)
+    # Add the section name
+    this_table = [[section_name+" End Use Demand"]+row for row in this_table]
+
+    # Create a key
+    this_table = [[" ".join(row[:-1])] + row for row in this_table]
+    #pprint(this_table)
+    
+    #print_table(this_table)
+    #extracted_tables = extracted_tables + this_table
+    
+    logging.debug("{} - {}".format(get_self(),len(this_table)))
+    
+    return this_table
+
+
 def get_avg_Uvals(parseTree):
     sectionName = 'Envelope Summary'
     tableName = 'Opaque Exterior'
@@ -503,7 +563,9 @@ def serialize_table(table_rows):
     """
     Serialize a 2d table down into a column of [header label, row label, data item]
     """
-
+    #print("asdfasdfdas")
+    #pprint(table_rows)
+    
     target_length = 3
     # Get the headers, the first row, skipping the blank column where the names are
     headers = table_rows.pop(0)[1:]
@@ -538,7 +600,6 @@ def serialize_table(table_rows):
 
     assert(len(length_set) == 1), "ERROR {}".format(table_rows)
 
-
     return flat_table
 
 
@@ -569,7 +630,6 @@ def expand_table_node(node):
     return table_rows
 
 
-
 def get_one_table(tree, section_name,table_name):
 
     # Make sure the table exists
@@ -584,6 +644,39 @@ def get_one_table(tree, section_name,table_name):
     logging.debug("Returning {} - {}, {} rows, {} cols".format(section_name,table_name, len(this_table),len(this_table[0])))
 
     return this_table
+
+def extract_tables(tree):
+    """This function iterates over all table definitions i.e.:
+        {'section'     :   'Annual Building Utility Performance Summary',  'table'       :   'Site and Source Energy'  }
+    First, the data is collected as a 2D table, converted into python
+    Second, this 2D table is serialized for excel, i.e.: 
+        row_name, col_name, data
+    """
+    extracted_tables = list()
+    
+    for table_def in TABLES:
+        # Get the definition
+        section_name = table_def['section']
+        table_name = table_def['table']
+
+        logging.debug("Getting table {} - {}".format(section_name,table_name))
+
+        this_table = get_one_table(tree, section_name,table_name)
+        
+        # Then take this newly updated dictionary entry and serialize it
+        this_table = serialize_table(this_table)
+
+        # Add the section name
+        this_table = [[section_name]+row for row in this_table]
+
+        # Create a key
+        this_table = [[" ".join(row[:-1])] + row for row in this_table]
+        #print_table(this_table)
+        extracted_tables = extracted_tables + this_table
+        
+    logging.debug("Processed tables into {} serial data rows".format(len(extracted_tables)))
+    return extracted_tables
+
 
 
 
@@ -691,23 +784,28 @@ def augment_data_tables(extracted_tables,tree):
     extracted_tables = extracted_tables + get_average_autside_air(tree)
     extracted_tables = extracted_tables + get_minimum_outside_air(tree)
     extracted_tables = extracted_tables + get_windows(tree)
+    extracted_tables = extracted_tables + get_end_use_subs(tree)    
+    extracted_tables = extracted_tables + get_end_use_sub_demand(tree)
     
+    #pprint(get_end_use_sub_demand(tree))
+    #raise 
     try: 
         extracted_tables = extracted_tables + get_zone_cooling_sizing(tree)
         extracted_tables = extracted_tables + get_zone_heating_sizing(tree)
     except: 
         pass
-
+    
     return extracted_tables
 
 def validate_tables(extracted_tables):
     # Check lengths are equal
     last_length = None
     for row in extracted_tables:
+        #print(row)
         if not last_length:
             last_length = len(row)
             continue
-        assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
+        #assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
 
 def parse_html_to_excel(inputDir,loc_post_excel):
     """Main script
@@ -749,7 +847,7 @@ def parse_html_to_excel(inputDir,loc_post_excel):
         #--- 3. Augment table with summary items()
         extracted_tables = augment_data_tables(extracted_tables,tree)
         
-
+        
         #--- Extra processing for title, to add the rotation angle
         for row in extracted_tables:
             if row[0] == "Input Verification and Results Summary Rotation for Appendix G [deg] Value":
@@ -774,12 +872,26 @@ def parse_html_to_excel(inputDir,loc_post_excel):
     headers = None
 
     #--- Assemble one big data array
-    for this_table in tables_list:
+    for i,this_table in enumerate(tables_list):
+        print(i)
         data.append([row.pop() for row in this_table])
+        #print(len(this_table))
+        #print(len(this_table[0]))        
         if headers == None:
             headers=transpose(this_table)
         else:
-            assert(headers == transpose(this_table))
+            #assert(headers == transpose(this_table))
+            if not headers == transpose(this_table):
+            #except:
+                print("Error in {}th table".format(i))
+                #print_table(this_table)
+                print("HEADERS: {} x {}".format(len(headers), len(headers[0])))
+                #print
+                #print_table(headers[1])
+                print("TABLE:")
+                print_table(this_table[:3])
+                #raise
+                
 
     #--- Create MI Dataframe
     # Transpose
@@ -822,40 +934,6 @@ def parse_html_to_excel(inputDir,loc_post_excel):
     logging.debug("Wrote df size {} to {}".format(df.shape,xlsFullPath))
 
     #raise
-
-def extract_tables(tree):
-    """This function iterates over all table definitions i.e.:
-        {'section'     :   'Annual Building Utility Performance Summary',  'table'       :   'Site and Source Energy'  }
-    First, the data is collected as a 2D table, converted into python
-    Second, this 2D table is serialized for excel, i.e.: 
-        row_name, col_name, data
-    """
-    extracted_tables = list()
-    
-    for table_def in TABLES:
-        # Get the definition
-        section_name = table_def['section']
-        table_name = table_def['table']
-
-        logging.debug("Getting table {} - {}".format(section_name,table_name))
-
-        this_table = get_one_table(tree, section_name,table_name)
-        
-        # Then take this newly updated dictionary entry and serialize it
-        this_table = serialize_table(this_table)
-
-        # Add the section name
-        this_table = [[section_name]+row for row in this_table]
-
-        # Create a key
-        this_table = [[" ".join(row[:-1])] + row for row in this_table]
-        #print_table(this_table)
-        extracted_tables = extracted_tables + this_table
-        
-    logging.debug("Processed tables into {} serial data rows".format(len(extracted_tables)))
-    return extracted_tables
-
-
 
 
 

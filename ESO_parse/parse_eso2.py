@@ -163,7 +163,7 @@ def parse_vardef(line):
         return(var)
 
 
-def get_headers(header_lines):
+def OLD_get_headers(header_lines):
     logging.debug("Processing variable definitions in {} lines".format(len(header_lines)))
 
     data = list()
@@ -249,7 +249,7 @@ def get_headers(header_lines):
     logging.debug("Returned {} variable definition rows in data frame".format(len(df)))
     return df
 
-def get_hourly_data(lines,hourly_indices):
+def OLD_get_hourly_data(lines,hourly_indices):
     line_count = 0
     #lines = eso_file.readlines()
     mark_environment = list()
@@ -308,7 +308,7 @@ def get_hourly_data(lines,hourly_indices):
     #print("Done")
     return environments
 
-def get_annual_frame(frames):
+def OLD_get_annual_frame(frames):
     #=======================================================================
     # Get the annual frame
     #=======================================================================
@@ -321,16 +321,128 @@ def get_annual_frame(frames):
         raise
     logging.debug("Annual frame selected".format(len(frames)))
 
-def get_biggest_frame(frames):
+def OLD_get_biggest_frame(frames):
     biggest=frames[0]
     for frame in frames:
         if len(frame) > len(biggest):
             biggest = frame
     return frame
 
-def save_frames(list_frames):
+def OLD_save_frames(list_frames):
     for frame in list_frames:
         xrg.write_excel_one(annual_hourly, path)
+
+
+   
+def OLD_save_dfs(df_dict):    
+    for name,df in df_dict.items():
+        original_name = util_paths.split_up_path(path_eso)[-2]
+        original_name = original_name.replace('-','')
+
+        path_out = dir_out + name + ".pck"
+        #df.to_pickle(path_out)
+        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
+
+        path_out = dir_out + name + '.mat'
+        #xrg2.write_matlab_tseries(df,path_out,original_name)
+        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
+
+
+def OLD_load_save(path_input, path_output):
+    logging.debug("{} -> {}".format(path_input, path_output))
+
+
+    t0 = time.time()
+
+
+    #=======================================================================
+    # Parse the eso into a big data frame
+    #=======================================================================
+    xframe = parse(path_input)
+    frames = [frame.return_multi_index() for frame in xframe]
+    frame = get_biggest_frame(frames)
+
+    #=======================================================================
+    # Extract the hourly data
+    #=======================================================================
+    mask = xrg.get_mask(frame, 'Timestep', 'Hourly')
+    hourly_df = frame.iloc[:,mask]
+
+    #=======================================================================
+    # Save as excel and pickle
+    #=======================================================================
+    xrg.write_pickle_one(hourly_df,path_output)
+    #xrg.write_excel_one(hourly_df,self.path_output + r'\eso.xlsx')
+
+
+    t1 = time.time()
+    total = t1-t0
+    logging.debug("Finished with {}, {} seconds".format(path_input, total))
+
+def OLD_analyze_results(frame,path_out):
+    logging.debug("Analyzing a frame {}".format(frame.shape))
+
+#     #=======================================================================
+#     # # Reload the frame from pickle
+#     #=======================================================================
+#     #path_in = paths[0]
+#     frame = this_frame
+
+    #=======================================================================
+    # The sub-frames will be saved to a dictionary
+    #=======================================================================
+    out_dfs = dict()
+
+    #=======================================================================
+    # *Get people count*
+    #=======================================================================
+    match = r'^People Occupant Count'
+    mask = xrg.get_mask_regex(frame, 'Name', match)
+    df_occupancy = xrg.apply_col_mask(frame,mask)
+    #df_occupancy = df_occupancy.iloc[:,1:10]
+    logging.debug("{} x {} occupancy frame".format(df_occupancy.shape[0],df_occupancy.shape[1]))
+
+    df_occupancy = xrg.sum_rows(df_occupancy, 'Units')
+    out_dfs['Occupancy'] = df_occupancy
+    out_dfs['Occupancy stats'] = df_occupancy.describe()
+
+    #=======================================================================
+    # *Get the zone temperatures*
+    #=======================================================================
+    match = r'^Zone Mean Air Temperature'
+    mask = xrg.get_mask_regex(frame, 'Name', match)
+    df_temps = xrg.apply_col_mask(frame,mask)
+    logging.debug("{} x {} temperature frame".format(df_temps.shape[0],df_temps.shape[1]))
+    out_dfs['Zone temperature'] = df_temps
+    out_dfs['Zone temperature stats'] = df_temps.describe()
+
+
+    #=======================================================================
+    # *Get outdoor air*
+    #=======================================================================
+    match = r'OUTDOOR AIR'
+    mask1 = xrg.get_mask_regex(frame, 'Category', match)
+    mask2 = xrg.get_mask_regex(frame, 'Units', 'kg/s')
+    mask = mask1 & mask2
+    df_oa = xrg.apply_col_mask(frame,mask)
+    logging.debug("{} x {} outdoor air frame".format(df_oa.shape[0],df_oa.shape[1]))
+    df_oa = xrg.sum_rows(df_oa, 'Units')
+    out_dfs['Outdoor air'] = df_oa
+    out_dfs['Outdoor air stats'] = df_oa.describe()
+    #print(df_oa)
+
+    #=======================================================================
+    # *Get environment*
+    #=======================================================================
+    match = r'Environment'
+    mask = xrg.get_mask_regex(frame, 'Category', match)
+    df_env = xrg.apply_col_mask(frame,mask)
+    logging.debug("{} x {} environment frame".format(df_env.shape[0],df_env.shape[1]))
+    out_dfs['Environment'] = df_env
+    out_dfs['Environment stats'] = df_env.describe()
+    #print(df_env)
+
+    xrg.write_dict_to_excel(out_dfs,path_out)
 
 
 def parse_tstep(tstep_def, eso_file):
@@ -418,13 +530,13 @@ def parse_tstep(tstep_def, eso_file):
     #raise
     return eso_file,line, {'timestamp' :timestamp, 'data':dict(zip(this_tstep_ids, this_tstep_vals)) }
 
-def parse_env(env_defition, eso_file):
+def parse_env(env_defition, eso_file, cnt_main):
     """Returns a DataFrame with columns labelled by variable ID, and indexed by timestamp
     """
 
     env_defition = " - ".join(env_defition)
     env_defition = env_defition.strip()
-    logging.debug("Parsing Env: {}".format(env_defition))
+    logging.debug("[Line {}] Parsing Env: {}".format(cnt_main,env_defition))
 
     t0 = time.time()
 
@@ -453,7 +565,7 @@ def parse_env(env_defition, eso_file):
 
         # This is a timestep
         if items[0] == "2":
-            #logging.debug("Found timestep: {}".format(items))
+            #logging.debug("[Line {}] Found timestep: {}".format(cnt_main+cnt,items))
 
             eso_file, line, tstep_data = parse_tstep(items, eso_file)
             tstep_data_list.append(tstep_data)
@@ -540,11 +652,11 @@ def process_vardefs(variable_defs):
     variable_definitions = dict(variable_definitions)
 
     logging.debug("Processed {} variable definitions".format(len(variable_definitions)))
-
+    
     return variable_definitions, column_labels
 
 
-def parse2(path_eso):
+def parse(path_eso):
     """Return df dict"""
     logging.debug("Parsing {}".format(path_eso))
     #http://code.ohloh.net/file?fid=DEXGA78swpM6h-Wfg-o0Gquk3fw&cid=Prb6amLFRs4&s=&fp=95353&mp&projSelected=true#L0
@@ -580,7 +692,7 @@ def parse2(path_eso):
             #--- A data entry
             #===================================================================
             if not flg_head:
-                logging.debug("Main Loop {}: Data entry".format(cnt, len(variable_defs)))
+                logging.debug("Main Loop [Line {}]: Data entry".format(cnt, len(variable_defs)))
                 
                 original_line = line
                 items = line.strip()
@@ -592,7 +704,7 @@ def parse2(path_eso):
                 # Environment found
                 #===============================================================
                 if items[0] == "1":
-                    eso_file,line,df,env_name = parse_env(items, eso_file)
+                    eso_file,line,df,env_name = parse_env(items, eso_file, cnt)
                     new_m_index = list()
 
                     # Collect the column definitions from our definition list
@@ -607,7 +719,7 @@ def parse2(path_eso):
 
 
                     df_dict[env_name] = df
-                    logging.debug("Added frame to list".format())
+                    logging.debug("Added frame to dictionary".format())
 
                     continue
 
@@ -626,10 +738,10 @@ def parse2(path_eso):
                     raise Exception("A data entry with no environment is not possible".format())
             
             #===============================================================
-            #--- The first list is skipped
+            #--- The first is skipped
             #===============================================================
             if flg_head and re.match(token_header, line):
-                logging.debug("Main Loop {}: Skip 1st list".format(cnt,len(variable_defs)))
+                logging.debug("Main Loop [Line {}]: Skip ".format(cnt))
                 pass
 
             #===================================================================
@@ -637,8 +749,11 @@ def parse2(path_eso):
             #===================================================================
             elif flg_head and re.match(token_endhead, line):
                 label = "End header"
-                logging.debug("Main Loop {}: {} different variable definitions loaded".format(cnt,len(variable_defs)))
+                
+                
                 variable_defs,column_labels = process_vardefs(variable_defs)
+                logging.debug("Main Loop [Line {}]: DONE WITH VARIABLE DEFS, {} different variable definitions loaded".format(cnt,len(variable_defs)))
+                logging.debug("Main Loop [Line {}]: flg_head SWITCHED FALSE".format(cnt,len(variable_defs)))
 
                 flg_head = False
 
@@ -647,7 +762,7 @@ def parse2(path_eso):
             #===================================================================
             else:
                 var = parse_vardef(line)
-                logging.debug("Main Loop {}: Found a Variable Definition, {}".format(cnt,var))
+                #logging.debug("Main Loop {}: Found a Variable Definition, {}".format(cnt,var))
                 variable_defs.append(var)
 
             #===================================================================
@@ -665,124 +780,18 @@ def parse2(path_eso):
         #--- End main loop
         #===================================================================
         logging.debug("{} frames found".format(len(df_dict)))
+        #print("KEYS:")
+        #for key in df_dict:
+        #    print(key)
+        #raise
         return df_dict
-    
-def NEW_save_dfs(df_dict):    
-    for name,df in df_dict.items():
-        original_name = util_paths.split_up_path(path_eso)[-2]
-        original_name = original_name.replace('-','')
-
-        path_out = dir_out + name + ".pck"
-        #df.to_pickle(path_out)
-        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
-
-        path_out = dir_out + name + '.mat'
-        #xrg2.write_matlab_tseries(df,path_out,original_name)
-        logging.debug("Saved from file {} into frame {}".format(path_eso,path_out))
-
-
-def load_save(path_input, path_output):
-    logging.debug("{} -> {}".format(path_input, path_output))
-
-
-    t0 = time.time()
-
-
-    #=======================================================================
-    # Parse the eso into a big data frame
-    #=======================================================================
-    xframe = parse(path_input)
-    frames = [frame.return_multi_index() for frame in xframe]
-    frame = get_biggest_frame(frames)
-
-    #=======================================================================
-    # Extract the hourly data
-    #=======================================================================
-    mask = xrg.get_mask(frame, 'Timestep', 'Hourly')
-    hourly_df = frame.iloc[:,mask]
-
-    #=======================================================================
-    # Save as excel and pickle
-    #=======================================================================
-    xrg.write_pickle_one(hourly_df,path_output)
-    #xrg.write_excel_one(hourly_df,self.path_output + r'\eso.xlsx')
-
-
-    t1 = time.time()
-    total = t1-t0
-    logging.debug("Finished with {}, {} seconds".format(path_input, total))
-
-def analyze_results(frame,path_out):
-    logging.debug("Analyzing a frame {}".format(frame.shape))
-
-#     #=======================================================================
-#     # # Reload the frame from pickle
-#     #=======================================================================
-#     #path_in = paths[0]
-#     frame = this_frame
-
-    #=======================================================================
-    # The sub-frames will be saved to a dictionary
-    #=======================================================================
-    out_dfs = dict()
-
-    #=======================================================================
-    # *Get people count*
-    #=======================================================================
-    match = r'^People Occupant Count'
-    mask = xrg.get_mask_regex(frame, 'Name', match)
-    df_occupancy = xrg.apply_col_mask(frame,mask)
-    #df_occupancy = df_occupancy.iloc[:,1:10]
-    logging.debug("{} x {} occupancy frame".format(df_occupancy.shape[0],df_occupancy.shape[1]))
-
-    df_occupancy = xrg.sum_rows(df_occupancy, 'Units')
-    out_dfs['Occupancy'] = df_occupancy
-    out_dfs['Occupancy stats'] = df_occupancy.describe()
-
-    #=======================================================================
-    # *Get the zone temperatures*
-    #=======================================================================
-    match = r'^Zone Mean Air Temperature'
-    mask = xrg.get_mask_regex(frame, 'Name', match)
-    df_temps = xrg.apply_col_mask(frame,mask)
-    logging.debug("{} x {} temperature frame".format(df_temps.shape[0],df_temps.shape[1]))
-    out_dfs['Zone temperature'] = df_temps
-    out_dfs['Zone temperature stats'] = df_temps.describe()
-
-
-    #=======================================================================
-    # *Get outdoor air*
-    #=======================================================================
-    match = r'OUTDOOR AIR'
-    mask1 = xrg.get_mask_regex(frame, 'Category', match)
-    mask2 = xrg.get_mask_regex(frame, 'Units', 'kg/s')
-    mask = mask1 & mask2
-    df_oa = xrg.apply_col_mask(frame,mask)
-    logging.debug("{} x {} outdoor air frame".format(df_oa.shape[0],df_oa.shape[1]))
-    df_oa = xrg.sum_rows(df_oa, 'Units')
-    out_dfs['Outdoor air'] = df_oa
-    out_dfs['Outdoor air stats'] = df_oa.describe()
-    #print(df_oa)
-
-    #=======================================================================
-    # *Get environment*
-    #=======================================================================
-    match = r'Environment'
-    mask = xrg.get_mask_regex(frame, 'Category', match)
-    df_env = xrg.apply_col_mask(frame,mask)
-    logging.debug("{} x {} environment frame".format(df_env.shape[0],df_env.shape[1]))
-    out_dfs['Environment'] = df_env
-    out_dfs['Environment stats'] = df_env.describe()
-    #print(df_env)
-
-    xrg.write_dict_to_excel(out_dfs,path_out)
-
+ 
 #===============================================================================
 # Unit testing
 #===============================================================================
 
 
-def LEED_eso_parse_df(root_dir):
+def OLD_LEED_eso_parse_df(root_dir):
     raise
     files = [{'in': root_dir+r'\Proposed.eso',       'out': root_dir+r'\\Proposed.pck'},
              {'in': root_dir+r'\Baseline-G000.eso',  'out': root_dir+r'\\Baseline.pck'},
@@ -829,7 +838,7 @@ class allTests(unittest.TestCase):
         logging.debug("Input: {}".format(self.root_dir))
         logging.debug("Output: {}".format(dir_out))
         
-        df_dict = parse2(path_file)
+        df_dict = parse(path_file)
         keys = list(df_dict.keys())
         # Change key names (shorten)
         for key in keys:

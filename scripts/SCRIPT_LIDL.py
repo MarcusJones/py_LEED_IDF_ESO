@@ -271,6 +271,10 @@ def idf_assembly(variants,templates,IDD_xml,proj_def):
                 
         #--- Process deletions
         #raise
+        if 0:
+            class_count_table = util_xml.get_table_object_count(this_IDF)
+            print_table(class_count_table)
+        #raise
         for deletion in variant_def['deletes']:
             util_xml.delete_classes_from_excel(this_IDF, IDD_xml, deletion)
         
@@ -388,10 +392,10 @@ def process_project():
     #===========================================================================
     # directories
     #===========================================================================
-    projectFile = r"C:\Eclipse\PyIDF\ExcelTemplates\Input Data Tower SO03 r06.xlsx"
-    weatherFilePath = FREELANCE_DIR + r"\WEA\ARE_Abu.Dhabi.412170_IWEC.epw"
-    outputDirPath = FREELANCE_DIR + r"\Simulation"
-    groupName = "00myGroup"
+    #projectFile = r"C:\Eclipse\PyIDF\ExcelTemplates\Input Data Tower SO03 r06.xlsx"
+    #weatherFilePath = FREELANCE_DIR + r"\WEA\ARE_Abu.Dhabi.412170_IWEC.epw"
+    #outputDirPath = FREELANCE_DIR + r"\Simulation"
+    #groupName = "00myGroup"
     
     #--- Check to delete
     key_input = input("Deleting all files in {} PRESS ENTER for YES:".format(proj['idf_output_dir']))
@@ -410,6 +414,7 @@ def process_project():
             except Exception as e:
                 print(e)
     #raise
+    
     #--- Get templates from directory     
     templates = get_templates(IDF_TEMPLATE_PATH)
     

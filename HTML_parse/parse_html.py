@@ -880,6 +880,7 @@ def parse_html_to_excel(inputDir,loc_post_excel):
         if headers == None:
             headers=transpose(this_table)
         else:
+            # TODO: Why was this assertion here? Why did it cause problems suddenly? 
             #assert(headers == transpose(this_table))
             if not headers == transpose(this_table):
             #except:

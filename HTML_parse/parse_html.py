@@ -1019,7 +1019,10 @@ def parse_file(thisTableFileName,flg_verbose = False):
 
 def parse_file2(thisTableFileName,flg_verbose = False):
     """
-    UPDATED FOR MORE PARSED DATA
+    Updated to capture more information from the HTML file. 
+    
+    Now, each section has a 'preamble' and 'tables' entry. 
+    
     """
     myLogger.setLevel("DEBUG")
     
@@ -1035,7 +1038,7 @@ def parse_file2(thisTableFileName,flg_verbose = False):
     
     # Loop over sections
     for sect in sections:
-        
+
         # Get the section name
         section_node_list = sect.xpath("b")
         assert len(section_node_list) == 1
@@ -1054,7 +1057,9 @@ def parse_file2(thisTableFileName,flg_verbose = False):
         
         section_name = section_node.text.strip()
         logging.debug("Section: {}".format(section_name))
-
+        
+        # Start this dictionary for this current section
+        sectionDict[section_name] = dict()
 
         # Step up to the <p>Report:
         current_node = section_node.getparent()
@@ -1082,6 +1087,15 @@ def parse_file2(thisTableFileName,flg_verbose = False):
         line5_timestamp = tostring(current_node)
         print(line5_timestamp)
         
+        report_preamble = [
+            line1_toc_link,
+            line2_toc_link,
+            line3_report_title,
+            line4_toc_link,
+            line5_timestamp,
+            ]
+        sectionDict[section_name]['preamble'] = report_preamble
+
         #raise
 
         flgContinue = True
@@ -1113,17 +1127,19 @@ def parse_file2(thisTableFileName,flg_verbose = False):
                 # We just selected ALL previous <b>, and we want only the one right before, hence -1
                 tableName = current_node.xpath("preceding-sibling::b")[-1]
 
-                tableName = current_node.xpath("preceding-sibling::b")[-1]
+                #tableName = current_node.xpath("preceding-sibling::b")[-1]
 
                 # Apply this table to the dict
                 tables[tableName.text] = current_node
 
         # This section is finished
-        sectionDict[section_name] = tables
+        #sectionDict[section_name] = tables\
         numTables = numTables + len(tables)
         
+        sectionDict[section_name]['tables'] = tables
+    
     logging.info("Parsed {} tables from {} sections to dictionary".format(numTables,len(sectionDict)))
-
+    raise
     return sectionDict
 
 

@@ -44,14 +44,21 @@ from ExergyUtilities.utility_excel import ExcelBookRead2
 
 from ExergyUtilities.util_pretty_print import print_table
 
+base_path = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\\"
 PROJ_LIDL = {
-                  'path_proj_excel' : r'C:\Dropbox\16336 LIDL\IDF Project\\',
-                  'idf_base' : r'C:\Dropbox\16336 LIDL\IDF Project\IDF\\',
-                  'weather_file' : r'C:\Dropbox\16336 LIDL\Weather\SVN_Ljubljana.130140_IWEC.epw',
+                  'path_proj_excel' : base_path + r'\\IDF Project\\',
+                  'idf_base' : base_path + r'\\IDF Project\IDF\\',
+                  #'weather_file' : base_path + r'\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw',
                   'output_dir' : r"C:\IDF_OUT\\",
-                  'path_weather_file' : r"C:\Dropbox\16336 LIDL\Weather\SVN_Ljubljana.130140_IWEC.epw",
-                  'idf_output_dir' :r"C:\Dropbox\16336 LIDL\IDF Project\OUTPUT\\", 
+                  'weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                  'path_weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\", 
+                  'idf_template_path' : base_path + r"\\IDF Project\IDF_Templates",
+                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\",
                   }
+
+#IDF_TEMPLATE_PATH = 
+#FREELANCE_DIR = r"C:\Dropbox\16336 LIDL\\"
 
 proj = PROJ_LIDL
 
@@ -218,7 +225,7 @@ def get_templates(templatePath, filter_regex_string = ".", flgExact = True):
 #    thisTemplate = thisTemplate[0]    
         
     
-    logging.debug("Found {} templates in {} filtered {}".format(len(templates),IDF_TEMPLATE_PATH, filter_regex_string))
+    logging.debug("Found {} templates in {} filtered {}".format(len(templates),proj['idf_template_path'], filter_regex_string))
     
     return templates
 
@@ -416,9 +423,11 @@ def process_project():
     #raise
     
     #--- Get templates from directory     
-    templates = get_templates(IDF_TEMPLATE_PATH)
+    templates = get_templates(proj['idf_template_path'])
     
     #--- Get excel project variant definitions
+    #print(proj['path_proj_excel'])
+    #raise
     excel_project_dir = get_latest_rev(proj['path_proj_excel'], r"^Input Data", ext_pat = "xlsx")
     variants = load_variants(excel_project_dir,proj['idf_base'])
     

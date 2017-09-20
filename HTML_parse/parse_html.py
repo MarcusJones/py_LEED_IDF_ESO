@@ -13,6 +13,8 @@ Etc.
 from __future__ import division
 import logging.config
 from config.config import *
+myLogger = logging.getLogger()
+myLogger.setLevel("DEBUG")
 
 #import sys 
 #print('\n'.join(sys.path))
@@ -36,6 +38,7 @@ import pandas as pd
 #import exergy_frame as xrg
 import numpy as np
 import lxml.html
+from xml.etree.ElementTree import tostring
 #pp = pprint.PrettyPrinter(indent=4)
 from openpyxl import load_workbook
 
@@ -807,7 +810,7 @@ def validate_tables(extracted_tables):
             continue
         #assert(len(row) == last_length), "Length of this row is {}, last row {}, {}".format(len(row),last_length,row)
 
-def parse_html_to_excel(inputDir,loc_post_excel):
+def parse_html_to_excel_summary(inputDir,loc_post_excel):
     """Main script
     #
 
@@ -1014,6 +1017,116 @@ def parse_file(thisTableFileName,flg_verbose = False):
 
     return sectionDict
 
+def parse_file2(thisTableFileName,flg_verbose = False):
+    """
+    UPDATED FOR MORE PARSED DATA
+    """
+    myLogger.setLevel("DEBUG")
+    
+    logging.debug("Start parse")
+    
+    # Root node
+    root = lxml.html.parse(thisTableFileName)
+    
+    # Select all sections
+    sections = root.xpath("//p[text() = 'Report:']")
+    sectionDict = {}
+    numTables = 0
+    
+    # Loop over sections
+    for sect in sections:
+        
+        # Get the section name
+        section_node_list = sect.xpath("b")
+        assert len(section_node_list) == 1
+                
+        section_node = section_node_list[0]
+        
+        #print(type(section_node))
+        
+        
+        # Skip any monthly summary reports
+        patValue = r".*Monthly$"
+        regex = re.compile(patValue,re.VERBOSE)
+        if regex.match(section_node.text):
+            print("SkipMonthly",)
+            continue
+        
+        section_name = section_node.text.strip()
+        logging.debug("Section: {}".format(section_name))
+
+
+        # Step up to the <p>Report:
+        current_node = section_node.getparent()
+        line3_report_title = tostring(current_node)
+        #print(current_node.text)
+        
+        #Step back to <a href>
+        current_node = current_node.getprevious()
+        line2_toc_link = tostring(current_node)
+        
+        #Step back to <p><toc>
+        current_node = current_node.getprevious()
+        line1_toc_link = tostring(current_node)
+        
+        print(line1_toc_link)
+        print(line2_toc_link)
+        print(line3_report_title)
+        current_node = section_node.getparent()
+
+        current_node = current_node.getnext()
+        line4_toc_link = tostring(current_node)
+        print(line4_toc_link)
+        
+        current_node = current_node.getnext()
+        line5_timestamp = tostring(current_node)
+        print(line5_timestamp)
+        
+        #raise
+
+        flgContinue = True
+        count = 0
+        tables = dict()
+        current_node = section_node.getparent()
+        while 1:
+            # Loop over the nodes
+            current_node = current_node.getnext()
+
+            # If there is no node, break the loop
+            if current_node == None:
+                break
+
+            # If the section is finished (we see the next section) break the loop
+            if current_node.xpath("text() = 'Report:'"):
+                flgContinue = False
+                break
+
+            # If we see too many iterations, break
+            count += 1
+            if count > 1000000:
+                flgContinue = False
+
+            # If this is a table, process the table
+            if current_node.tag == "table":
+                # Get the name
+                # Get all the <b> elements, since the title is bold
+                # We just selected ALL previous <b>, and we want only the one right before, hence -1
+                tableName = current_node.xpath("preceding-sibling::b")[-1]
+
+                tableName = current_node.xpath("preceding-sibling::b")[-1]
+
+                # Apply this table to the dict
+                tables[tableName.text] = current_node
+
+        # This section is finished
+        sectionDict[section_name] = tables
+        numTables = numTables + len(tables)
+        
+    logging.info("Parsed {} tables from {} sections to dictionary".format(numTables,len(sectionDict)))
+
+    return sectionDict
+
+
 
 
 def run_projectGUI():
@@ -1026,7 +1139,7 @@ def run_projectGUI():
 
 
     app = wx.App(False)
-    frame = runDirectory(HTMLdataDir, parse_html_to_excel)
+    frame = runDirectory(HTMLdataDir, parse_html_to_excel_summary)
     frame.Show()
     app.MainLoop()
 
@@ -1078,8 +1191,8 @@ if __name__ == "__main__":
 
         #raise
         #run_projectGUI()
-        #parse_html_to_excel(HTMLdataDir)
+        #parse_html_to_excel_summary(HTMLdataDir)
 
-    parse_html_to_excel(HTMLdataDir)
+    parse_html_to_excel_summary(HTMLdataDir)
 
     logging.debug("Finished _main".format())

@@ -39,7 +39,7 @@ import ESO_parse.parse_eso2 as p_eso
 #===============================================================================
 # Code
 #===============================================================================
-
+OUTPUT_DIR = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
 def parseSummary():
     project_dir = OUTPUT_DIR
 

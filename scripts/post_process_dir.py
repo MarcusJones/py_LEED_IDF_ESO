@@ -39,14 +39,15 @@ import ESO_parse.parse_eso2 as p_eso
 #===============================================================================
 # Code
 #===============================================================================
-OUTPUT_DIR = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
+project_dir = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
+project_dir = r"C:\Dropbox\EnergyDB"
+
 def parseSummary():
-    project_dir = OUTPUT_DIR
 
     #project_dir = r"C:\Projects2\081_Central_Admin2\140328 March review submission\\"
     #project_dir = r"D:\Projects\IDFout2\\"
 
-    if 1:
+    if 0:
         #===========================================================================
         #--- HTML files into one excel file
         #===========================================================================
@@ -55,11 +56,11 @@ def parseSummary():
         #loc_post_excel = os.path.dirname(os.path.realpath(__file__)) + r"\..\ExcelTemplates\LEED PostProcess r23.xlsx"
         #loc_post_excel = os.path.abspath( loc_post_excel )
         
-        p_html.parse_html_to_excel(project_dir,POST_PROC_EXCEL_FILE)
+        p_html.parse_html_to_excel_summary(project_dir,POST_PROC_EXCEL_FILE)
         
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         
-    if 1:
+    if 0:
         #===========================================================================
         #--- Zone Summary HTML files to excel file
         #===========================================================================
@@ -78,31 +79,29 @@ def parseSummary():
         util_pandas.write_dict_to_excel(df_dict,path )
         logging.debug("Finished with zone summary tables in {}".format(project_dir))
 
-    if 0:
+    if 1:
         #===========================================================================
         #--- ESO Parsing
         #===========================================================================
-        files = [
-             {'in': project_dir+r'\Proposed.idf.eso',       'out': project_dir+r'\\Proposed '},
-                 
-             {'in': project_dir+r'\Baseline-G000.eso',  'out': project_dir+r'\\Baseline '},
-             ]
-        old = r"1 - UNTITLED (01-01:31-12) -"
-        #print(old)
-        #print(old.rep) 
         
-        
-        for file_def in files:
+        files = util_paths.get_files_by_name_ext(project_dir, '.','eso')
+        for fname in files:
+            path,thisFile=os.path.split(fname)
+            pure_file_name,extension = os.path.splitext( thisFile)
+            file_def = {'in': os.path.normpath(fname),       
+                        'out': os.path.normpath(project_dir+ r'\\' +pure_file_name)}
             logging.debug("Processing {}".format(file_def))
-            #raise
+            #print(type(file_def))
             result_df_dict = p_eso.parse(file_def['in'])
-            #file_def['out']
-            #print(result_df)
-            #raise
-            
-            
+            #print(result_df_dict)
+            #print(type(result_df_dict))
+#             for key in result_df_dict:
+#                 print("THIS KEY", key)
+#                 
+#                 print(result_df_dict[key])
+#                 
             keys = list(result_df_dict.keys())
-            # Change key names (shorten)
+            
             for key in keys:
                 #print("Dateframe: {}".format(key))
                 new_key = key[0:29]
@@ -112,32 +111,63 @@ def parseSummary():
                 result_df_dict[new_key] = result_df_dict[key]
                 del result_df_dict[key]
                 
-                print(new_key)
+                #print(new_key)
                 #print(df_dict[key])
-                
-                
-            #raise
+
             for key in result_df_dict:
                 print()
                 print("***DATAFRAME***")
                 print(key, result_df_dict[key].shape)
                 #print(df_dict[key].describe())
                 print()
-            #raise
+                
             path_excel = file_def['out'] + ".xlsx"
     
             util_pandas.write_dict_to_excel(result_df_dict,path_excel)
             
             logging.debug("Finished writing to {}".format(path_excel))
-            
+
             path_matlab = file_def['out'] + ".mat"
             
+
             for i,key in enumerate(result_df_dict):
                 # name = "name{}.mat".format(chr(i))
-                name = 'a'
+                name = "a{}".format(i)
                 df = result_df_dict[key]
                 util_pandas.write_matlab_tseries(df,path_matlab,name)
+                        
+                    
+# 
+#         
+#         files = [
+#              {'in': project_dir+r'\Proposed.idf.eso',       'out': project_dir+r'\\Proposed '},
+#                  
+#              {'in': project_dir+r'\Baseline-G000.eso',  'out': project_dir+r'\\Baseline '},
+#              ]
+#         old = r"1 - UNTITLED (01-01:31-12) -"
+        #print(old)
+        #print(old.rep) 
+        
+        
+        #for file_def in files:
+            #logging.debug("Processing {}".format(file_def))
+            #raise
+            #result_df_dict = p_eso.parse(file_def['in'])
+            #file_def['out']
+            #print(result_df)
+            #raise
             
+            
+            #keys = list(result_df_dict.keys())
+            # Change key names (shorten)
+            
+                
+            #raise
+
+            #raise
+            
+            
+
         
         logging.debug("Parsed eso's in {}".format(project_dir))
 

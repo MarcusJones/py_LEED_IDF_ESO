@@ -42,6 +42,20 @@ import ESO_parse.parse_eso2 as p_eso
 project_dir = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
 project_dir = r"C:\Dropbox\EnergyDB"
 
+ESO_DEFINITIONS = [ 
+        {
+        'name': "VRF", 
+        'file_name' : "VRF.idf.eso",
+        'matlab_struct_name' : "df_VRF",
+        'out': os.path.normpath(project_dir+ r'\\IDF Project\OUTPUT\VRF'),
+        },
+        {
+        'name': "PTHP", 
+        'file_name' : "PTHP.idf.eso",
+        'matlab_struct_name' : "df_PTHP",
+        'out': os.path.normpath(project_dir+ r'\\IDF Project\OUTPUT\PTHP'),
+        }
+   ]
 def parseSummary():
 
     #project_dir = r"C:\Projects2\081_Central_Admin2\140328 March review submission\\"
@@ -85,7 +99,26 @@ def parseSummary():
         #===========================================================================
         
         files = util_paths.get_files_by_name_ext(project_dir, '.','eso')
+        
+        for eso_def in ESO_DEFINITIONS:
+            #os.path.join()
+            logging.debug("Processing {} to {}".format(eso_def['file_name'], eso_def['out']))
+            input_file = os.path.normpath(project_dir+r"\\IDF Project\\OUTPUT\\"+eso_def['file_name'])
+            #print(input_file)
+            #raise
+            result_df_dict = p_eso.parse(input_file)
+            
+            for i,key in enumerate(result_df_dict):
+                # name = "name{}.mat".format(chr(i))
+                if i == 1:
+                    raise
+                df = result_df_dict[key]
+                out_file_path = eso_def['out']+".mat"
+                util_pandas.write_matlab_tseries(df,out_file_path,eso_def['matlab_struct_name'])
+                logging.debug("Wrote {}, {}".format(out_file_path,eso_def['matlab_struct_name']))
+        raise
         for fname in files:
+            break
             path,thisFile=os.path.split(fname)
             pure_file_name,extension = os.path.splitext( thisFile)
             file_def = {'in': os.path.normpath(fname),       

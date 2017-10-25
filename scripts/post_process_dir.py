@@ -40,7 +40,7 @@ import ESO_parse.parse_eso2 as p_eso
 # Code
 #===============================================================================
 project_dir = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
-project_dir = r"C:\Dropbox\EnergyDB"
+#project_dir = r"C:\Dropbox\EnergyDB"
 
 ESO_DEFINITIONS = [ 
         {
@@ -61,7 +61,7 @@ def parseSummary():
     #project_dir = r"C:\Projects2\081_Central_Admin2\140328 March review submission\\"
     #project_dir = r"D:\Projects\IDFout2\\"
 
-    if 0:
+    if 1:
         #===========================================================================
         #--- HTML files into one excel file
         #===========================================================================
@@ -93,7 +93,7 @@ def parseSummary():
         util_pandas.write_dict_to_excel(df_dict,path )
         logging.debug("Finished with zone summary tables in {}".format(project_dir))
 
-    if 1:
+    if 0:
         #===========================================================================
         #--- ESO Parsing
         #===========================================================================

@@ -44,39 +44,36 @@ from ExergyUtilities.utility_excel import ExcelBookRead2
 
 from ExergyUtilities.util_pretty_print import print_table
 
-
 #--- Project setup - LIDL
-base_path = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\\"
-PROJ_LIDL = {
-                  'path_proj_excel' : base_path + r'\\IDF Project\\',
-                  'idf_base' : base_path + r'\\IDF Project\IDF\\',
-                  #'weather_file' : base_path + r'\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw',
-                  'output_dir' : r"C:\IDF_OUT\\",
-                  #'weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
-                  'path_weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
-                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\", 
-                  'idf_template_path' : base_path + r"\\IDF Project\IDF_Templates",
-                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\",
-                  }
+if 1:
+    base_path = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\\"
+    proj = {
+                      'path_proj_excel' : base_path + r'\\IDF Project\\',
+                      'idf_base' : base_path + r'\\IDF Project\IDF\\',
+                      #'weather_file' : base_path + r'\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw',
+                      'output_dir' : r"C:\IDF_OUT\\",
+                      #'weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                      'path_weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                      'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\", 
+                      'idf_template_path' : base_path + r"\\IDF Project\IDF_Templates",
+                      'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\",
+                      }
 
 #--- Project setup - Testing fresh air
-base_path = r"C:\Dropbox\EnergyDB"
-PROJ_TESTING = {
-                  'path_proj_excel' : base_path + r'\\IDF Project\\',
-                  'idf_base' : base_path + r'\\IDF Project\IDF\\',
-                  #'weather_file' : base_path + r'\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw',
-                  'output_dir' : r"C:\IDF_OUT\\",
-                  #'weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
-                  'path_weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
-                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\", 
-                  'idf_template_path' : r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\IDF_Templates",
-                  'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\",
-                  }
+if 0:
+    base_path = r"C:\Dropbox\EnergyDB"
+    proj = {
+                      'path_proj_excel' : base_path + r'\\IDF Project\\',
+                      'idf_base' : base_path + r'\\IDF Project\IDF\\',
+                      #'weather_file' : base_path + r'\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw',
+                      'output_dir' : r"C:\IDF_OUT\\",
+                      #'weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                      'path_weather_file' : base_path + r"\\IDF Project\Weather\SVN_Ljubljana.130140_IWEC.epw",
+                      'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\", 
+                      'idf_template_path' : r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\IDF_Templates",
+                      'idf_output_dir' : base_path + r"\\IDF Project\OUTPUT\\",
+                      }
 
-#IDF_TEMPLATE_PATH = 
-#FREELANCE_DIR = r"C:\Dropbox\16336 LIDL\\"
-
-proj = PROJ_TESTING
 
 def load_variants(inputExcelPath,path_idf_base):
     

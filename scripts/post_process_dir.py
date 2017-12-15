@@ -40,8 +40,8 @@ import ESO_parse.parse_eso2 as p_eso
 # Code
 #===============================================================================
 project_dir = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\IDF Project\OUTPUT"
-
 project_dir = r'C:\00M\06_Optimize Energy Performance\IDF Project\OUTPUT'
+project_dir = r'C:\Dropbox\16336 LIDL\06_Optimize Energy Performance\IDF Project\OUTPUT'
 #project_dir = r"C:\Dropbox\EnergyDB"
 
 ESO_DEFINITIONS = [ 
@@ -76,7 +76,7 @@ def parseSummary():
         
         logging.debug("Finished with HTML tables in {}".format(project_dir))
         
-    if 0:
+    if 1:
         #===========================================================================
         #--- Zone Summary HTML files to excel file
         #===========================================================================

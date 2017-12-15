@@ -47,7 +47,9 @@ from ExergyUtilities.util_pretty_print import print_table
 #--- Project setup - LIDL
 if 1:
     base_path = r"M:\52_CES\16336_LEED_Lidl\5_Arbeit\Credits\05_EA\06_Optimize Energy Performance\\"
-    base_path = r"C:\00M\06_Optimize Energy Performance\\"    
+    base_path = r"C:\00M\06_Optimize Energy Performance\\"
+    base_path = r'C:\Dropbox\16336 LIDL\06_Optimize Energy Performance\\'
+
     proj = {
                       'path_proj_excel' : base_path + r'\\IDF Project\\',
                       'idf_base' : base_path + r'\\IDF Project\IDF\\',
